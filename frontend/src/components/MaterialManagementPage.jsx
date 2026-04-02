@@ -34,7 +34,7 @@ export function MaterialManagementPage() {
         setLoadingMaterials(true)
         try {
             const data = await fetchVendorMaterials(vendorId)
-            setMaterials(data)
+            setMaterials(data.sort((a, b) => b.id - a.id))
         } catch (e) {
             setError('Failed to load materials')
         } finally {

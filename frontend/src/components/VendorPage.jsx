@@ -4,7 +4,7 @@ import { VendorTable } from './VendorTable'
 import { AddVendorModal } from './AddVendorModal'
 import { ManageMaterialsModal } from './ManageMaterialsModal'
 import { VendorUpload } from './VendorUpload'
-import { FaPlus, FaCloudUploadAlt } from 'react-icons/fa'
+import { FaTools, FaPlus, FaCloudUploadAlt } from 'react-icons/fa'
 import './VendorPage.css'
 
 export function VendorPage() {
@@ -20,7 +20,7 @@ export function VendorPage() {
         setError(null)
         try {
             const data = await fetchVendorList()
-            setVendors(data)
+            setVendors(data.sort((a, b) => b.id - a.id))
         } catch (e) {
             setError(e.message || 'Failed to load vendors')
         } finally {
@@ -56,15 +56,18 @@ export function VendorPage() {
                         <VendorUpload onSuccess={loadVendors} />
                     </div>
 
-                    <div className="sidebar-actions">
-                        <button
-                            type="button"
-                            className="btn btn-primary"
-                            onClick={() => setAddVendorOpen(true)}
-                            style={{ width: '100%' }}
-                        >
-                            <FaPlus /> Add Vendor
-                        </button>
+                    <div className="action-card">
+                        <div className="sidebar-actions">
+                            <h3><FaTools /> Operations</h3>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => setAddVendorOpen(true)}
+                                style={{ width: '100%' }}
+                            >
+                                <FaPlus /> Add Vendor
+                            </button>
+                        </div>
                     </div>
 
                     <div className="vendor-stats-vertical">

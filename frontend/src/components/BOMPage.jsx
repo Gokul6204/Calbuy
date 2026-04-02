@@ -27,7 +27,7 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
     const [successMessage, setSuccessMessage] = useState(null)
 
     const handleUploadSuccess = async (newRows) => {
-        const updatedList = [...bomList, ...newRows]
+        const updatedList = [...newRows, ...bomList]
         setBomList(updatedList)
         setSuccessMessage(`Parsed ${newRows.length} items. Auto-saving...`)
         try {
@@ -57,10 +57,10 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
                         ? materialData : item
                 )
             } else {
-                updatedList = [...bomList, materialData]
+                updatedList = [materialData, ...bomList]
             }
         } else {
-            updatedList = [...bomList, materialData]
+            updatedList = [materialData, ...bomList]
         }
         
         setBomList(updatedList)
@@ -139,7 +139,7 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
                 <aside className="home-sidebar">
                     <div className="action-card">
                         <h3><FaCloudUploadAlt /> Extract Bom from Pdf's</h3>
-                        <button className='btn btn-primary' onClick={() => setView('folder-upload')}><FaCloudUploadAlt /> Upload Folder</button>
+                        <button className='btn btn-primary' onClick={() => alert("AI model not yet Build")}><FaCloudUploadAlt /> Upload Folder</button>
                     </div>
                     <div className="action-card">
                         <h3><FaCloudUploadAlt /> Import BOM</h3>

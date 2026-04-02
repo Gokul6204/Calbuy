@@ -1,0 +1,108 @@
+.bom-table-wrap {
+  overflow: auto;
+  height: 100%;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  background: var(--surface-0);
+  box-shadow: var(--shadow-sm);
+}
+
+.bom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.bom-table th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 1rem 1.25rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border-light);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.bom-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+
+.bom-table tbody tr {
+  transition: var(--transition);
+}
+
+.bom-table tbody tr:hover {
+  background: var(--surface-soft);
+}
+
+.bom-table-qty {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--accent-light);
+}
+
+.bom-table-source {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.bom-table-actions {
+  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.bom-table-btn {
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bom-table-btn-edit {
+  color: var(--accent-light);
+}
+
+.bom-table-btn-edit:hover {
+  background: var(--accent-glow);
+  border-color: var(--accent-light);
+}
+
+.bom-table-btn-delete {
+  color: var(--text-muted);
+}
+
+.bom-table-btn-delete:hover:not(:disabled) {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.bom-table-empty {
+  color: var(--text-secondary);
+  padding: 4rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface-0);
+  border-radius: var(--radius-lg);
+}

@@ -1,0 +1,208 @@
+.bom-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.bom-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.bom-upload-input-wrap {
+  flex: 1;
+  position: relative;
+  min-width: 280px;
+}
+
+.bom-upload-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--surface-0);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.bom-upload-input:hover {
+  border-color: var(--text-muted);
+  background: var(--surface-1);
+}
+
+.bom-upload-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.bom-upload-input::-webkit-file-upload-button {
+  visibility: hidden;
+  width: 0;
+}
+
+.bom-upload-input::before {
+  content: 'Select File';
+  display: inline-block;
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.75rem;
+  outline: none;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin-right: 0.75rem;
+  color: var(--text-primary);
+}
+
+.bom-upload-btn {
+  padding: 0 1.5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.bom-upload-btn:hover:not(:disabled) {
+  background: var(--accent-light);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px var(--accent-glow);
+}
+
+.bom-upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bom-upload-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bom-upload-file {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+.bom-upload-error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--error);
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.bom-upload-success {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--success);
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.btn-upload-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.upload-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.1rem 0.5rem;
+  border-radius: 100px;
+}
+
+.selected-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.selected-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  background: var(--surface-0);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+.file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.file-size {
+  opacity: 0.6;
+  font-size: 0.75rem;
+}
+
+.upload-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border-light);
+  padding-top: 1rem;
+}
+
+.result-item {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.result-item.success {
+  color: var(--success);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.result-item.error {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.res-name {
+  font-weight: 600;
+  flex-shrink: 0;
+}

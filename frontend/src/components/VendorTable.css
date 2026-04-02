@@ -1,0 +1,105 @@
+/* Consistent with BOMTable.css but with vendor-specific tweaks */
+.table-wrapper {
+    overflow: auto;
+    height: 100%;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--surface-0);
+    box-shadow: var(--shadow-sm);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.data-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--surface-1);
+    border-bottom: 1px solid var(--border-light);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+.data-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary);
+}
+
+.data-table tbody tr {
+    transition: var(--transition);
+}
+
+.data-table tbody tr:hover {
+    background: var(--surface-soft);
+}
+
+.font-mono {
+    font-family: 'Fira Code', 'Courier New', monospace;
+    color: var(--accent-light);
+    font-size: 0.8rem;
+}
+
+.font-semibold {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cell-address {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
+.actions-cell {
+    white-space: nowrap;
+    width: 1%;
+    text-align: right;
+}
+
+.btn-icon {
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    color: var(--accent-light);
+    background: var(--accent-glow);
+    border-color: var(--accent-light);
+    transform: translateY(-1px);
+}
+
+.btn-delete:hover {
+    color: var(--error);
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.empty-state {
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--text-secondary);
+    background: var(--surface-0);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-light);
+}

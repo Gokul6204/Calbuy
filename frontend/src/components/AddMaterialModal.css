@@ -1,0 +1,219 @@
+.add-material-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.add-material-modal {
+  background: var(--surface-1);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: modalScale 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.add-material-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface-0);
+}
+
+.add-material-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.add-material-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-material-close:hover {
+  background: var(--surface-soft);
+  color: var(--text-primary);
+}
+
+.add-material-form {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.add-material-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.add-material-form .required {
+  color: var(--error);
+  margin-left: 2px;
+}
+
+.add-material-form input,
+.add-material-form textarea {
+  padding: 0.875rem 1rem;
+  background: var(--surface-0);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.9375rem;
+  transition: var(--transition);
+  font-family: inherit;
+  width: 100%;
+}
+
+.add-material-form textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+.add-material-form input:focus,
+.add-material-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--surface-soft);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.add-material-form .field-error {
+  border-color: var(--error) !important;
+  background: rgba(239, 68, 68, 0.02) !important;
+}
+
+.add-material-form .field-error:focus {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15) !important;
+}
+
+.add-material-error {
+  margin: 0;
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.add-material-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Redundant since we use global classes, but kept for compatibility or specialized tweaks */
+.add-material-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+}
+
+.add-material-btn.primary {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+
+.add-material-btn.primary:hover:not(:disabled) {
+  background: var(--accent-light);
+  transform: translateY(-1px);
+}
+
+.v-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-column {
+  margin-bottom: 2rem;
+}
+
+.materials-list-section label {
+  margin-bottom: 1rem;
+}
+
+.material-scroll-list.inset {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.material-row.mini {
+  padding: 0.75rem 1rem;
+  background: var(--surface-0);
+  margin-bottom: 0.5rem;
+}
+
+.no-data-msg {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: 2rem;
+}
+
+.add-material-btn.secondary {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border-color: var(--border-light);
+}
+
+.add-material-btn.secondary:hover {
+  background: var(--surface-soft);
+  border-color: var(--text-muted);
+}

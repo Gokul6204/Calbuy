@@ -230,7 +230,7 @@ export function VendorPortal({ initialProjectId }) {
                 <div className="portal-scroll-container">
                     <div className="dash-hero-minimal">
                         <div className="hero-content">
-                            <h2>Required Items <span>List</span></h2>
+                            <h4>Required Items <span>List</span></h4>
                         </div>
                     </div>
 
@@ -309,7 +309,7 @@ export function VendorPortal({ initialProjectId }) {
                             <span className="label">QUOTING FOR</span>
                             <span className="value">{selectedRfq.material}</span>
                         </div>
-                        <span className="rfq-id-pill">{selectedRfq.id}</span>
+                        <span className="rfq-id-pill">RFQ ID: {selectedRfq.id}</span>
                     </div>
                 </header>
 

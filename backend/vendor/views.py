@@ -94,6 +94,8 @@ class SendRfqEmailView(APIView):
         
         return Response({"message": f"Sent {sent_count} emails successfully."})
 
+from Calbuy_procurement.realtime import broadcast_company_event
+
 class VendorListCreateView(APIView):
     """List vendors (GET) or create a vendor (POST)."""
 
@@ -112,7 +114,17 @@ class VendorListCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try:
-            vendor = serializer.save()
+            # Determine company_id from user or default
+            company_id = getattr(request.user, 'company_id', 1)
+            vendor = serializer.save(company_id=company_id)
+            
+            # Real-time Broadcast
+            broadcast_company_event(
+                company_id=company_id,
+                action_type="vendor_updated",
+                payload=VendorDetailsSerializer(vendor).data,
+                sender_id=request.user.id if request.user.is_authenticated else None
+            )
         except IntegrityError:
             return Response(
                 {"error": "vendor_id already exists."},
@@ -135,6 +147,13 @@ class VendorDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try:
             vendor = serializer.save()
+            # Real-time Broadcast
+            broadcast_company_event(
+                company_id=vendor.company_id,
+                action_type="vendor_updated",
+                payload=VendorDetailsSerializer(vendor).data,
+                sender_id=request.user.id if request.user.is_authenticated else None
+            )
         except IntegrityError:
             return Response(
                 {"error": "vendor_id already exists."},
@@ -144,7 +163,16 @@ class VendorDetailView(APIView):
 
     def delete(self, request, pk):
         vendor = get_object_or_404(VendorDetails, pk=pk)
+        company_id = vendor.company_id
+        vendor_id = vendor.vendor_id
         vendor.delete()
+        # Real-time Broadcast
+        broadcast_company_event(
+            company_id=company_id,
+            action_type="vendor_deleted",
+            payload={"id": pk, "vendor_id": vendor_id},
+            sender_id=request.user.id if request.user.is_authenticated else None
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

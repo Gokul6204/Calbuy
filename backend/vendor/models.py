@@ -9,6 +9,7 @@ class VendorDetails(models.Model):
     that the user enters (unique).
     """
 
+    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID
     vendor_id = models.CharField(max_length=50, unique=True, db_index=True)
     vendor_name = models.CharField(max_length=255)
     mobile_number = models.CharField(max_length=20, blank=True, null=True, unique=True)

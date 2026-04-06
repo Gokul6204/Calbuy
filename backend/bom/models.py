@@ -10,6 +10,7 @@ class BOM(models.Model):
     """Bill of Materials line item."""
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="bom_lines", null=True, blank=True)
+    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID
     bom_id = models.CharField(max_length=100, db_index=True, help_text="BOM identifier")
     part_number = models.CharField(max_length=100, blank=True, help_text="Part numbers from the file")
     material = models.CharField(max_length=255, help_text="Material description or code")

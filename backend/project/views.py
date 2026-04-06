@@ -9,6 +9,8 @@ from vendor.models import VendorDetails
 import secrets
 import string
 
+from Calbuy_procurement.realtime import broadcast_company_event
+
 class ProjectListCreateView(generics.ListCreateAPIView):
     queryset = Project.objects.all().order_by('-id')
     serializer_class = ProjectSerializer
@@ -17,7 +19,22 @@ class ProjectListCreateView(generics.ListCreateAPIView):
         # Generate a random strong password for the project
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
         project_password = ''.join(secrets.choice(alphabet) for i in range(12))
-        serializer.save(project_password=project_password)
+        
+        # Determine company_id from user or default
+        company_id = getattr(self.request.user, 'company_id', 1)
+        
+        project = serializer.save(
+            project_password=project_password,
+            company_id=company_id
+        )
+        
+        # Real-time Broadcast
+        broadcast_company_event(
+            company_id=company_id,
+            action_type="project_updated",
+            payload=ProjectSerializer(project).data,
+            sender_id=self.request.user.id if self.request.user.is_authenticated else None
+        )
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()

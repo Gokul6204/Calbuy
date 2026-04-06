@@ -19,6 +19,7 @@ ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 # Auto-reload trigger
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -27,10 +28,32 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "channels",
     "bom",
     "vendor",
     "project",
 ]
+
+# Real-time WebSocket support
+ASGI_APPLICATION = "Calbuy_procurement.asgi.application"
+
+# For local development, we use InMemoryChannelLayer.
+# In production, switch to RedisChannelLayer as shown below.
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+
+# Production Redis Configuration:
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [os.getenv('REDIS_URL', 'redis://127.0.0.1:6379')],
+#         },
+#     },
+# }
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

@@ -1,6 +1,7 @@
 from django.db import models
 
 class Project(models.Model):
+    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -26,6 +27,7 @@ class ProjectVendorAccess(models.Model):
         unique_together = ('project', 'vendor_email')
 
 class Quotation(models.Model):
+    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     vendor_id = models.CharField(max_length=50) # Link by business ID
     bom_item_id = models.IntegerField(null=True, blank=True) # FK to BOMRecord

@@ -81,6 +81,15 @@ class VendorPortalLoginView(APIView):
             from django.utils import timezone
             access.last_login = timezone.now()
             access.save()
+            
+            # Real-time Broadcast: Notify admin that vendor is now "Pending" (active login)
+            from Calbuy_procurement.realtime import broadcast_company_event
+            broadcast_company_event(
+                company_id=project.company_id,
+                action_type="quotation_updated",
+                payload={"project_id": project.id, "vendor_id": access.vendor_id, "status": "Pending"},
+                sender_id=None # Anonymous vendor
+            )
 
             # Fetch vendor name
             vendor_name = "Verified Vendor"
@@ -158,6 +167,17 @@ class VendorQuotationView(APIView):
                 "lead_time_days": data.get("lead_time"),
                 "notes": f"Location: {data.get('location')}. {data.get('notes')}",
                 "count": data.get("count"), # Assuming we add this field to Quotation model
+                "company_id": project.company_id # Inherit from project
             }
         )
+        
+        # Real-time Broadcast: Notify admin that quotation was submitted
+        from Calbuy_procurement.realtime import broadcast_company_event
+        broadcast_company_event(
+            company_id=project.company_id,
+            action_type="quotation_updated",
+            payload={"project_id": project.id, "vendor_id": vendor_id},
+            sender_id=None
+        )
+        
         return Response({"message": "Quotation submitted successfully", "id": quote.id})

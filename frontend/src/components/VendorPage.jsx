@@ -8,7 +8,10 @@ import { FaTools, FaPlus, FaCloudUploadAlt } from 'react-icons/fa'
 import { BsPersonFillCheck, BsPersonFillX  } from "react-icons/bs";
 import './VendorPage.css'
 
+import { useWebSocket } from '../context/WebSocketContext'
+
 export function VendorPage() {
+    const { subscribe, isConnected } = useWebSocket()
     const [vendors, setVendors] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -32,7 +35,31 @@ export function VendorPage() {
 
     useEffect(() => {
         loadVendors()
-    }, [loadVendors])
+    }, [loadVendors, isConnected]) // Re-fetch on reconnect
+
+    useEffect(() => {
+        const unsubscribeUpdate = subscribe('vendor_updated', (updatedVendor) => {
+            setVendors(prev => {
+                const index = prev.findIndex(v => v.id === updatedVendor.id)
+                if (index !== -1) {
+                    const newVendors = [...prev]
+                    newVendors[index] = updatedVendor
+                    return newVendors
+                } else {
+                    return [updatedVendor, ...prev]
+                }
+            })
+        })
+
+        const unsubscribeDelete = subscribe('vendor_deleted', (payload) => {
+            setVendors(prev => prev.filter(v => v.id !== payload.id))
+        })
+
+        return () => {
+            unsubscribeUpdate()
+            unsubscribeDelete()
+        }
+    }, [subscribe])
 
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this vendor?')) return

@@ -1,29 +1,41 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { FaHandshake, FaFileAlt, FaCheckCircle, FaTrash, FaExclamationCircle, FaEnvelopeOpenText, FaClock } from 'react-icons/fa'
 import { fetchProjectQuotations } from '../api/project'
+import { useWebSocket } from '../context/WebSocketContext'
 import './QuotationPage.css'
 
 export function QuotationPage({ project }) {
+    const { subscribe, isConnected } = useWebSocket()
     const [submissions, setSubmissions] = useState([])
     const [selectedSubmission, setSelectedSubmission] = useState(null)
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        if (!project?.id) return;
-        
-        const loadQuotations = async () => {
-            try {
-                setLoading(true)
-                const data = await fetchProjectQuotations(project.id)
-                setSubmissions(data)
-            } catch (err) {
-                console.error("Failed to load quotations:", err)
-            } finally {
-                setLoading(false)
-            }
+    const loadQuotations = useCallback(async () => {
+        if (!project?.id) return
+        try {
+            setLoading(true)
+            const data = await fetchProjectQuotations(project.id)
+            setSubmissions(data)
+        } catch (err) {
+            console.error("Failed to load quotations:", err)
+        } finally {
+            setLoading(false)
         }
-        loadQuotations()
     }, [project])
+
+    useEffect(() => {
+        loadQuotations()
+    }, [loadQuotations, isConnected])
+
+    useEffect(() => {
+        const unsubscribe = subscribe('quotation_updated', (payload) => {
+            // If the update belongs to this project, refresh the list
+            if (payload.project_id === project?.id) {
+                loadQuotations()
+            }
+        })
+        return () => unsubscribe()
+    }, [subscribe, loadQuotations, project])
 
     return (
         <div className="quotation-page view-container">

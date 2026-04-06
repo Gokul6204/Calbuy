@@ -11,10 +11,11 @@ class VendorDetails(models.Model):
 
     vendor_id = models.CharField(max_length=50, unique=True, db_index=True)
     vendor_name = models.CharField(max_length=255)
-    mobile_number = models.CharField(max_length=20, blank=True)
-    email = models.EmailField(max_length=255, blank=True)
+    mobile_number = models.CharField(max_length=20, blank=True, null=True, unique=True)
+    email = models.EmailField(max_length=255, blank=True, null=True, unique=True)
     location = models.CharField(max_length=255, blank=True)
     address = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -36,6 +37,7 @@ class VendorMaterialInfo(models.Model):
         db_column="vendor_id",
         on_delete=models.CASCADE
     )
+    part_number = models.CharField(max_length=100, blank=True, null=True)
     material = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 

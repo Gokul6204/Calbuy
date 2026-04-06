@@ -103,3 +103,156 @@
     border-radius: var(--radius-lg);
     border: 1px dashed var(--border-light);
 }
+
+/* Status Badge Styles */
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.status-badge.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+}
+
+.status-badge.inactive {
+    background: rgba(107, 114, 128, 0.1);
+    color: #4b5563;
+}
+
+.row-inactive {
+    opacity: 0.6;
+    background: #f9fafb;
+}
+
+.row-inactive:hover {
+    background: #f3f4f6 !important;
+}
+
+.btn-status-active {
+    color: #059669;
+}
+
+.btn-status-active:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b98155;
+    color: #047857;
+}
+
+.btn-status-inactive {
+    color: #6b7280;
+}
+
+.btn-status-inactive:hover {
+    background: rgba(107, 114, 128, 0.1);
+    border-color: #6b728055;
+    color: #4b5563;
+}
+
+/* Modern Location Popover Styles */
+.location-cell {
+    position: relative;
+    cursor: default;
+}
+
+.location-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-left: -8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    width: fit-content;
+}
+
+.location-wrapper:hover {
+    background: rgba(16, 132, 199, 0.05);
+}
+
+.loc-icon {
+    font-size: 0.85rem;
+    color: #10b981;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.loc-icon.active {
+    transform: scale(1.2) rotate(45deg);
+    color: #059669;
+}
+
+.address-popover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 10px;
+    z-index: 1001;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    width: 280px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.popover-arrow {
+    position: absolute;
+    top: -6px;
+    left: 20px;
+    width: 12px;
+    height: 12px;
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
+    border-top: 1px solid #e2e8f0;
+    transform: rotate(45deg);
+}
+
+.popover-inner {
+    padding: 1.25rem;
+}
+
+.popover-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.popover-text {
+    margin: 0;
+    color: #1e293b;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.9) translateY(-10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin-left: 0.5rem;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.info-icon:hover {
+    color: var(--accent-light);
+}

@@ -9,6 +9,9 @@ export function ProjectPage({ onSelectProject }) {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectDesc, setNewProjectDesc] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState(null);
+  const [createdProject, setCreatedProject] = useState(null);
 
   useEffect(() => {
     loadProjects();
@@ -31,14 +34,25 @@ export function ProjectPage({ onSelectProject }) {
     if (!newProjectName.trim()) return;
 
     try {
-      await createProject({ name: newProjectName, description: newProjectDesc });
+      setIsCreating(true);
+      setError(null);
+      const data = await createProject({ name: newProjectName, description: newProjectDesc });
+      setCreatedProject(data);
       setNewProjectName("");
       setNewProjectDesc("");
-      setShowAddModal(false);
       loadProjects();
     } catch (err) {
       console.error("Failed to create project:", err);
+      setError(err.message || "Failed to create project. Please check if the backend is running.");
+    } finally {
+      setIsCreating(false);
     }
+  };
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setCreatedProject(null);
+    setError(null);
   };
 
   const handleDeleteProject = async (id, e) => {
@@ -64,7 +78,7 @@ export function ProjectPage({ onSelectProject }) {
             <p>Manage and select your procurement projects</p>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+        <button className="btn btn-primary" onClick={() => { setShowAddModal(true); setCreatedProject(null); setError(null); }}>
           <FaPlus /> Create New Project
         </button>
       </header>
@@ -121,48 +135,76 @@ export function ProjectPage({ onSelectProject }) {
       </div>
 
       {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+        <div className="modal-overlay" onClick={closeAddModal}>
           <div className="modal-content shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Create New Project</h3>
-              <button className="btn-close" onClick={() => setShowAddModal(false)}>
+              <h3>{createdProject ? "Project Created Successfully" : "Create New Project"}</h3>
+              <button className="btn-close" onClick={closeAddModal}>
                 &times;
               </button>
             </div>
-            <form onSubmit={handleCreateProject}>
-              <div className="modal-body">
-                <div className="form-group mb-4">
-                  <label>Project Name</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g., Terminal Expansion 2026"
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    required
-                    autoFocus
-                  />
+            
+            {createdProject ? (
+              <div className="modal-body text-center">
+                <div className="success-icon mb-4" style={{ fontSize: '3rem', color: 'var(--success)' }}>
+                  <FaFolder />
                 </div>
-                <div className="form-group">
-                  <label>Description (Optional)</label>
-                  <textarea
-                    className="form-control"
-                    placeholder="Briefly describe the project goals..."
-                    rows={4}
-                    value={newProjectDesc}
-                    onChange={(e) => setNewProjectDesc(e.target.value)}
-                  />
+                <h4 className="mb-3">Project: {createdProject.name}</h4>
+                <div className="password-display p-4 bg-light rounded mb-4" style={{ border: '2px dashed var(--primary)', background: 'rgba(var(--primary-rgb), 0.05)' }}>
+                  <p className="mb-2 text-muted uppercase small tracking-wider">Portal Access Password</p>
+                  <h2 className="font-mono text-primary m-0" style={{ letterSpacing: '2px' }}>{createdProject.project_password}</h2>
+                </div>
+                <p className="text-muted mb-4">
+                  Save this password! Vendors will need it alongside their email to login to the quotation portal.
+                  This password is unique for this project.
+                </p>
+                <div className="modal-footer justify-content-center p-0 border-0">
+                  <button className="btn btn-primary btn-lg w-100" onClick={closeAddModal}>
+                    Got it, Open Projects
+                  </button>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={!newProjectName.trim()}>
-                  Create Project
-                </button>
-              </div>
-            </form>
+            ) : (
+              <form onSubmit={handleCreateProject}>
+                <div className="modal-body">
+                  {error && (
+                    <div className="alert alert-danger mb-4">
+                      {error}
+                    </div>
+                  )}
+                  <div className="form-group mb-4">
+                    <label>Project Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g., Terminal Expansion 2026"
+                      value={newProjectName}
+                      onChange={(e) => setNewProjectName(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Description (Optional)</label>
+                    <textarea
+                      className="form-control"
+                      placeholder="Briefly describe the project goals..."
+                      rows={4}
+                      value={newProjectDesc}
+                      onChange={(e) => setNewProjectDesc(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={closeAddModal}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn btn-primary" disabled={!newProjectName.trim() || isCreating}>
+                    {isCreating ? <><div className="spinner-border spinner-border-sm me-2"></div> Creating...</> : "Create Project"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

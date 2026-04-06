@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchVendorList, deleteVendor } from '../api/vendor'
+import { fetchVendorList, deleteVendor, updateVendor } from '../api/vendor'
 import { VendorTable } from './VendorTable'
 import { AddVendorModal } from './AddVendorModal'
 import { ManageMaterialsModal } from './ManageMaterialsModal'
 import { VendorUpload } from './VendorUpload'
 import { FaTools, FaPlus, FaCloudUploadAlt } from 'react-icons/fa'
+import { BsPersonFillCheck, BsPersonFillX  } from "react-icons/bs";
 import './VendorPage.css'
 
 export function VendorPage() {
@@ -14,6 +15,7 @@ export function VendorPage() {
     const [addVendorOpen, setAddVendorOpen] = useState(false)
     const [editingVendor, setEditingVendor] = useState(null)
     const [manageMaterialsVendor, setManageMaterialsVendor] = useState(null)
+    const [assignVendorOpen, setAssignVendorOpen] = useState(false)
 
     const loadVendors = useCallback(async () => {
         setLoading(true)
@@ -39,6 +41,18 @@ export function VendorPage() {
             loadVendors()
         } catch (e) {
             alert(e.message)
+        }
+    }
+
+    const handleToggleStatus = async (vendor) => {
+        const action = vendor.is_active ? 'deactivate' : 'activate'
+        if (!window.confirm(`Are you sure you want to ${action} this vendor?`)) return
+        
+        try {
+            await updateVendor(vendor.id, { ...vendor, is_active: !vendor.is_active })
+            loadVendors()
+        } catch (e) {
+            alert(e.message || 'Failed to update status')
         }
     }
 
@@ -103,9 +117,11 @@ export function VendorPage() {
                         ) : (
                             <VendorTable
                                 data={vendors}
+                                onAssign={(v) => setAssignVendorOpen(v)}
                                 onEdit={(v) => setEditingVendor(v)}
                                 onDelete={handleDelete}
                                 onManageMaterials={(v) => setManageMaterialsVendor(v)}
+                                onToggleStatus={handleToggleStatus}
                             />
                         )}
                     </div>

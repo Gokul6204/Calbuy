@@ -1,13 +1,38 @@
 import { useState, useEffect } from 'react'
 import { FaEnvelopeOpenText, FaPaperPlane, FaUserEdit, FaTrash } from 'react-icons/fa'
+import { VscLoading } from "react-icons/vsc";
 import { sendRfqs } from '../api/vendor'
 import './RFQPage.css'
 
 export function RFQPage({ project, vendors = [], setView }) {
     const [rfqs, setRfqs] = useState([])
+    const [isSending, setIsSending] = useState(false)
+
+    const calculateDefaultDeadline = () => {
+        const date = new Date()
+        date.setDate(date.getDate() + 14) // 2 weeks from now
+        
+        const day = date.getDay() // 0 = Sunday, 6 = Saturday
+        if (day === 6) { // Saturday -> Friday
+            date.setDate(date.getDate() - 1)
+        } else if (day === 0) { // Sunday -> Monday
+            date.setDate(date.getDate() + 1)
+        }
+        
+        return date.toISOString().split('T')[0] // YYYY-MM-DD
+    }
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '[Submission Deadline]'
+        const [year, month, day] = dateStr.split('-')
+        return `${day}-${month}-${year}`
+    }
 
     useEffect(() => {
         if (vendors && vendors.length > 0) {
+            const defaultDeadline = calculateDefaultDeadline()
+            const formattedDeadline = formatDate(defaultDeadline)
+
             // Group by material: one RFQ per material, with all matching vendors listed
             const materialMap = {}
             vendors.forEach(v => {
@@ -30,12 +55,21 @@ export function RFQPage({ project, vendors = [], setView }) {
                 material,
                 vendors: vendorList,
                 subject: `Request for Quotation: ${material}`,
+                deadline: defaultDeadline, 
                 body: `Dear Sir/Madam,
 
 We are interested in procuring the following material/component from you:
 - ${material}
 
 Please provide us with your best quote and estimated lead time for this item.
+
+VENDORS PORTAL ACCESS:
+You can also submit and manage your quotation online through our secure portal:
+Portal Link: http://localhost:5173/portal/${project?.id || 'PROJECT_ID'}
+Login Email: [Your Registered Email]
+Project Password: ${project?.project_password || '[Auto-Generated-On-Creation]'}
+
+Submission Deadline: ${formattedDeadline}
 
 Best regards,
 Procurement Team`,
@@ -44,10 +78,29 @@ Procurement Team`,
         } else {
             setRfqs([])
         }
-    }, [vendors])
+    }, [vendors, project])
 
     const handleUpdateRfq = (id, field, value) => {
-        setRfqs(prev => prev.map(r => r.id === id ? { ...r, [field]: value } : r))
+        setRfqs(prev => prev.map(r => {
+            if (r.id === id) {
+                let updatedRfq = { ...r, [field]: value }
+                
+                // If deadline is updated, also try to update it in the body template
+                if (field === 'deadline') {
+                    const oldFormatted = formatDate(r.deadline)
+                    const newFormatted = formatDate(value)
+                    if (r.body.includes(`Submission Deadline: ${oldFormatted}`)) {
+                        updatedRfq.body = r.body.replace(
+                            `Submission Deadline: ${oldFormatted}`, 
+                            `Submission Deadline: ${newFormatted}`
+                        )
+                    }
+                }
+                
+                return updatedRfq
+            }
+            return r
+        }))
     }
 
     const handleRemoveRfq = (id) => {
@@ -55,12 +108,30 @@ Procurement Team`,
     }
 
     const handleSendAll = async () => {
+        if (isSending) return;
+        setIsSending(true)
         try {
-            const data = await sendRfqs(rfqs)
-            alert(data?.message || 'RFQs sent successfully for all materials!')
+            // First: Generate portal access credentials
+            const vendorList = []
+            rfqs.forEach(rfq => {
+               rfq.vendors.forEach(v => {
+                  if(!vendorList.find(x => x.vendor_id === v.vendor_id)){
+                    vendorList.push({ vendor_id: v.vendor_id, email: v.email || `${v.vendor_id.toLowerCase()}@example.com` })
+                  }
+               })
+            })
+
+            // Call backend to ensure access records exist and get credentials
+            console.log("Generating portal access for:", vendorList)
+
+            const data = await sendRfqs(rfqs, project?.id)
+            alert(data?.message || 'RFQs sent successfully with portal access credentials!')
+            setView('quotation')
         } catch (error) {
             console.error('Error sending RFQs:', error)
             alert(error.message || 'An error occurred while sending RFQs.')
+        } finally {
+            setIsSending(false)
         }
     }
 
@@ -95,9 +166,19 @@ Procurement Team`,
                                         <span className="vendor-badge rfq-mat-badge">{r.material}</span>
                                         <h4>{r.vendors.length} Vendor{r.vendors.length > 1 ? 's' : ''}</h4>
                                     </div>
-                                    <button className="btn-icon-danger" onClick={() => handleRemoveRfq(r.id)}>
-                                        <FaTrash />
-                                    </button>
+                                    <div className="rfq-card-header-actions">
+                                        <div className="rfq-deadline-picker">
+                                            <label>Deadline:</label>
+                                            <input 
+                                                type="date"
+                                                value={r.deadline}
+                                                onChange={(e) => handleUpdateRfq(r.id, 'deadline', e.target.value)}
+                                            />
+                                        </div>
+                                        <button className="btn-icon-danger" onClick={() => handleRemoveRfq(r.id)}>
+                                            <FaTrash />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="rfq-card-body">
@@ -129,8 +210,12 @@ Procurement Team`,
 
             {rfqs.length > 0 && (
                 <div className="rfq-page-footer">
-                    <button className="btn btn-primary btn-lg" onClick={handleSendAll}>
-                        <FaPaperPlane /> Send All RFQs
+                    <button className="btn btn-primary btn-lg" onClick={handleSendAll} disabled={isSending}>
+                        {isSending ? (
+                            <><VscLoading className="spinner-icon" /> Sending...</>
+                        ) : (
+                            <><FaPaperPlane /> Send All RFQs</>
+                        )}
                     </button>
                 </div>
             )}

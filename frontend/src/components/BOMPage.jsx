@@ -4,7 +4,8 @@ import { BOMTable } from './BOMTable'
 import { AddMaterialModal } from './AddMaterialModal'
 import { bulkCreateBOM } from '../api/bom'
 import { matchVendors } from '../api/vendor'
-import { FaPlus, FaSearch, FaCloudUploadAlt, FaTools, FaRegSave, FaTrash } from 'react-icons/fa'
+import { FaPlus, FaSearch, FaCloudUploadAlt, FaTools, FaRegSave, FaTrash, FaArrowLeft } from 'react-icons/fa'
+import { UnderConstruction } from './UnderConstruction'
 import './HomePage.css'
 
 /** Derive next BOM ID from existing list (e.g. BOM-001, BOM-002 -> BOM-003). */
@@ -25,6 +26,7 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
     const [savingToDB, setSavingToDB] = useState(false)
     const [error, setError] = useState(null)
     const [successMessage, setSuccessMessage] = useState(null)
+    const [viewMode, setViewMode] = useState('list') // 'list' or 'construction'
 
     const handleUploadSuccess = async (newRows) => {
         const updatedList = [...newRows, ...bomList]
@@ -62,10 +64,10 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
         } else {
             updatedList = [materialData, ...bomList]
         }
-        
+
         setBomList(updatedList)
         setEditingRecord(null)
-        
+
         // Auto-save
         try {
             await bulkCreateBOM(updatedList, project?.id)
@@ -80,7 +82,7 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
             return item.temp_id !== row.temp_id
         })
         setBomList(updatedList)
-        
+
         // Auto-save after delete
         try {
             await bulkCreateBOM(updatedList, project?.id)
@@ -139,7 +141,12 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
                 <aside className="home-sidebar">
                     <div className="action-card">
                         <h3><FaCloudUploadAlt /> Extract Bom from Pdf's</h3>
-                        <button className='btn btn-primary' onClick={() => alert("AI model not yet Build")}><FaCloudUploadAlt /> Upload Folder</button>
+                        <button
+                            className={`btn ${viewMode === 'construction' ? 'btn-secondary' : 'btn-primary'}`}
+                            onClick={() => setViewMode(viewMode === 'construction' ? 'list' : 'construction')}
+                        >
+                            {viewMode === 'construction' ? <><FaArrowLeft /> Back To Bom Table</> : <><FaCloudUploadAlt /> Upload Folder</>}
+                        </button>
                     </div>
                     <div className="action-card">
                         <h3><FaCloudUploadAlt /> Import BOM</h3>
@@ -189,18 +196,29 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
                 </aside>
 
                 <main className="home-main-content">
-                    <div className="table-container-header">
-                        <h2>BOM Records</h2>
-                        <span className="v-badge">{bomList.length} total items</span>
-                    </div>
+                    {viewMode === 'list' ? (
+                        <>
+                            <div className="table-container-header">
+                                <h2>BOM Records</h2>
+                                <span className="v-badge">{bomList.length} total items</span>
+                            </div>
 
-                    <div className="table-view-inner">
-                        <BOMTable
-                            data={bomList}
-                            onEdit={(row) => setEditingRecord(row)}
-                            onDelete={handleDelete}
-                        />
-                    </div>
+                            <div className="table-view-inner">
+                                <BOMTable
+                                    data={bomList}
+                                    onEdit={(row) => setEditingRecord(row)}
+                                    onDelete={handleDelete}
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="construction-inner-view">
+                            <UnderConstruction
+                                title="AI BOM Extraction (Folders)"
+                                description="We are training our AI models to automatically extract BOM items from technical drawings and multi-page PDFs within folders. This feature will be available soon."
+                            />
+                        </div>
+                    )}
                 </main>
             </div>
 

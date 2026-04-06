@@ -67,6 +67,16 @@
     font-size: 1rem;
 }
 
+.spinner-icon {
+    animation: spin 1s linear infinite;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .rfq-list {
     display: flex;
     flex-direction: column;
@@ -319,4 +329,43 @@
 .rfq-vendor-chip-loc {
     color: var(--text-secondary);
     font-size: 0.7rem;
+}
+
+.rfq-card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.rfq-deadline-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #f1f5f9;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.rfq-deadline-picker label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #475569;
+    margin: 0;
+}
+
+.rfq-deadline-picker input {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e293b;
+    outline: none;
+}
+
+.rfq-deadline-picker input:focus {
+    border-color: #3b82f6;
 }

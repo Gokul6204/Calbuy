@@ -11,27 +11,79 @@ from .serializers import VendorDetailsSerializer, VendorMaterialInfoSerializer
 from .parsers import parse_file
 from django.core.mail import send_mail
 from django.conf import settings
+from project.models import Project, ProjectVendorAccess, Quotation
+import string
+import secrets
+
+def generate_password(length=12):
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(alphabet) for i in range(length))
 
 class SendRfqEmailView(APIView):
     def post(self, request):
         rfqs = request.data.get("rfqs", [])
+        project_id = request.data.get("project_id")
+        
         if not rfqs:
             return Response({"error": "No RFQs provided"}, status=status.HTTP_400_BAD_REQUEST)
         
         sent_count = 0
         for rfq in rfqs:
             subject = rfq.get("subject", "Request for Quotation")
-            body = rfq.get("body", "")
+            original_body = rfq.get("body", "")
             vendors = rfq.get("vendors", [])
+            
             for vendor_info in vendors:
-                vendor_id = vendor_info.get("vendor_id")
+                v_id = vendor_info.get("vendor_id")
                 try:
-                    vendor = VendorDetails.objects.get(vendor_id=vendor_id)
+                    vendor = VendorDetails.objects.get(vendor_id=v_id)
                     to_email = vendor.email
                     if to_email and to_email.lower() != "unknown" and "@" in to_email:
+                        # Replace placeholders with actual vendor info
+                        deadline_val = rfq.get("deadline", "Not specified")
+                        vendor_body = original_body.replace("[Your Registered Email]", to_email)
+                        vendor_body = vendor_body.replace("[Submission Deadline]", str(deadline_val))
+                        
+                        # Ensure portal access exists if project_id is provided
+                        if project_id:
+                            try:
+                                project = Project.objects.get(pk=project_id)
+                                ProjectVendorAccess.objects.get_or_create(
+                                    project=project,
+                                    vendor_email=to_email,
+                                    defaults={
+                                        'vendor_id': v_id,
+                                        'access_password': generate_password()
+                                    }
+                                )
+                                
+                                # Create/Update placeholder quotation with deadline
+                                deadline_val = rfq.get("deadline")
+                                if deadline_val:
+                                    material = rfq.get("material", "unknown")
+                                    # Use filter().first() to avoid MultipleObjectsReturned if duplicates exist
+                                    quote = Quotation.objects.filter(
+                                        project=project,
+                                        vendor_id=v_id,
+                                        material_name=material
+                                    ).first()
+                                    
+                                    if quote:
+                                        quote.submission_deadline = deadline_val
+                                        quote.save()
+                                    else:
+                                        Quotation.objects.create(
+                                            project=project,
+                                            vendor_id=v_id,
+                                            material_name=material,
+                                            submission_deadline=deadline_val
+                                        )
+                            except Project.DoesNotExist:
+                                pass
+
                         send_mail(
                             subject,
-                            body,
+                            vendor_body,
                             getattr(settings, 'DEFAULT_FROM_EMAIL', 'procurement@calbuy.com'),
                             [to_email],
                             fail_silently=False,
@@ -107,9 +159,14 @@ class VendorMaterialListCreateView(APIView):
     def post(self, request, vendor_pk):
         vendor = get_object_or_404(VendorDetails, pk=vendor_pk)
         material = (request.data.get("material") or "").strip()
+        part_number = (request.data.get("part_number") or "").strip()
         if not material:
             return Response({"error": "material is required."}, status=status.HTTP_400_BAD_REQUEST)
-        obj = VendorMaterialInfo.objects.create(vendor=vendor, material=material)
+        obj = VendorMaterialInfo.objects.create(
+            vendor=vendor, 
+            material=material,
+            part_number=part_number
+        )
         return Response(VendorMaterialInfoSerializer(obj).data, status=status.HTTP_201_CREATED)
 
 
@@ -119,9 +176,11 @@ class VendorMaterialDetailView(APIView):
     def put(self, request, pk):
         obj = get_object_or_404(VendorMaterialInfo, pk=pk)
         material = (request.data.get("material") or "").strip()
+        part_number = (request.data.get("part_number") or "").strip()
         if not material:
             return Response({"error": "material is required."}, status=status.HTTP_400_BAD_REQUEST)
         obj.material = material
+        obj.part_number = part_number
         obj.save()
         return Response(VendorMaterialInfoSerializer(obj).data)
 

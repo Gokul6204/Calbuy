@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { fetchVendorList, fetchVendorMaterials, createVendorMaterial, deleteVendorMaterial } from '../api/vendor'
 import { FaRegTrashAlt, FaSearch } from "react-icons/fa";
+import { AddMaterialModal } from './AddMaterialModal'
 import './MaterialManagementPage.css'
 
 export function MaterialManagementPage() {
@@ -12,6 +13,7 @@ export function MaterialManagementPage() {
     const [loadingVendors, setLoadingVendors] = useState(true)
     const [loadingMaterials, setLoadingMaterials] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const [showAddModal, setShowAddModal] = useState(false)
     const [error, setError] = useState(null)
 
     const loadVendors = useCallback(async () => {
@@ -142,22 +144,27 @@ export function MaterialManagementPage() {
                     ) : (
                         <div className="mapping-content">
                             <div className="mapping-header">
-                                <h3>{selectedVendor.vendor_name}</h3>
-                                <span className="v-badge">{selectedVendor.vendor_id}</span>
+                                <div className="mapping-header-left">
+                                    <h3>{selectedVendor.vendor_name}</h3>
+                                    <span className="v-badge">{selectedVendor.vendor_id}</span>
+                                </div>
+                                <div className="mapping-action-row">
+                                    <div className="spacer"></div>
+                                    <button className="btn btn-primary portal-btn-sm" onClick={() => setShowAddModal(true)}>
+                                        Add Material
+                                    </button>
+                                </div> 
                             </div>
 
-                            <form onSubmit={handleAddMaterial} className="quick-add-form">
-                                <input
-                                    type="text"
-                                    value={newMaterial}
-                                    onChange={(e) => setNewMaterial(e.target.value)}
-                                    placeholder="Enter new material name..."
-                                    required
-                                />
-                                <button type="submit" disabled={submitting || !newMaterial.trim()} className="btn-add">
-                                    {submitting ? <span className="spinner"></span> : 'Add Material'}
-                                </button>
-                            </form>
+                            
+                            
+                            <AddMaterialModal 
+                                open={showAddModal} 
+                                onClose={() => setShowAddModal(false)}
+                                onSuccess={() => loadMaterials(selectedVendorId)}
+                                vendorId={selectedVendorId}
+                                mode="vendor"
+                            />
 
                             {error && <div className="error-bar">{error}</div>}
 
@@ -171,7 +178,11 @@ export function MaterialManagementPage() {
                                     <div className="material-scroll-list">
                                         {materials.map(m => (
                                             <div key={m.id} className="material-row">
-                                                <span>{m.material}</span>
+                                                <div className="m-info">
+                                                    {m.part_number && <span className="m-pn">{m.part_number}</span>}
+                                                    {m.part_number && <span className="m-sep">-</span>}
+                                                    <span className="m-name">{m.material}</span>
+                                                </div>
                                                 <button
                                                     className="delete-mini"
                                                     onClick={() => handleDeleteMaterial(m.id)}

@@ -60,11 +60,12 @@ export async function fetchVendorMaterials(vendorId) {
     return handleResponse(res)
 }
 
-export async function createVendorMaterial(vendorId, material) {
+export async function createVendorMaterial(vendorId, materialData) {
+    // materialData can be { material, part_number }
     const res = await fetch(`${API_BASE}/vendors/${vendorId}/materials/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ material }),
+        body: JSON.stringify(materialData),
     })
     return handleResponse(res)
 }
@@ -84,11 +85,40 @@ export async function matchVendors(materials, location = '') {
     return handleResponse(res)
 }
 
-export async function sendRfqs(rfqs) {
+export async function sendRfqs(rfqs, projectId) {
     const res = await fetch(`${API_BASE}/vendors/send-rfq/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rfqs }),
+        body: JSON.stringify({ rfqs, project_id: projectId }),
+    })
+    return handleResponse(res)
+}
+
+// Vendor Portal APIs
+export async function portalLogin(credentials) {
+    const res = await fetch(`${API_BASE}/portal/login/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+    })
+    return handleResponse(res)
+}
+
+export async function fetchPortalItems(projectId, vendorId) {
+    const res = await fetch(`${API_BASE}/projects/${projectId}/vendors/${vendorId}/items/`)
+    return handleResponse(res)
+}
+
+export async function fetchVendorQuotations(projectId, vendorId) {
+    const res = await fetch(`${API_BASE}/projects/${projectId}/vendors/${vendorId}/quotations/`)
+    return handleResponse(res)
+}
+
+export async function submitQuotation(projectId, vendorId, quotationData) {
+    const res = await fetch(`${API_BASE}/projects/${projectId}/vendors/${vendorId}/quotations/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(quotationData),
     })
     return handleResponse(res)
 }

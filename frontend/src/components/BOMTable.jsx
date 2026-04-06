@@ -28,7 +28,7 @@ export function BOMTable({ data, onEdit, onDelete }) {
             <th>Part Number</th>
             <th>Material</th>
             <th className="bom-table-qty">Qty</th>
-            {/* <th>Type</th> */}
+            <th>Required Date</th>
             <th>Source</th>
             <th style={{ textAlign: 'right' }}>Actions</th>
           </tr>
@@ -40,7 +40,7 @@ export function BOMTable({ data, onEdit, onDelete }) {
               <td>{row.bom_id}</td>
               <td className="font-semibold">{row.material}</td>
               <td className="bom-table-qty">{formatQty(row.quantity)}</td>
-              {/* <td>{row.material_type}</td> */}
+              <td>{formatDate(row.date_of_requirement)}</td>
               <td>
                 <div className="bom-table-source" title={row.source_file}>
                   {row.source_file}

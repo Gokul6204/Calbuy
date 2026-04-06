@@ -5,15 +5,21 @@ import { MatchingVendorsPanel } from './components/MatchingVendorsPanel'
 import { VendorPage } from './components/VendorPage'
 import { MaterialManagementPage } from './components/MaterialManagementPage'
 import { RFQPage } from './components/RFQPage'
+import { QuotationPage } from './components/QuotationPage'
+import { VendorSelectionPage } from './components/VendorSelectionPage'
 import { ProjectPage } from './components/ProjectPage'
+import { VendorPortal } from './components/VendorPortal'
 import { fetchBOMList } from './api/bom'
 import { updateProject } from './api/project'
 import { ProfileMenu } from './components/ProfileMenu'
 import { FaHome, FaIndustry, FaBoxOpen, FaHandshake, FaEnvelopeOpenText, FaFileAlt, FaProjectDiagram } from 'react-icons/fa'
+import { FaRankingStar } from "react-icons/fa6";
 import './App.css'
 
 function App() {
   const [view, setView] = useState('home') // 'home', 'projects', 'vendor', 'material', 'matching-vendor', or 'rfq'
+  const isPortalView = window.location.pathname.startsWith('/portal/')
+  const portalProjectId = isPortalView ? window.location.pathname.split('/')[2] : null
   const [selectedProject, setSelectedProject] = useState(null)
   const [matchedVendors, setMatchedVendors] = useState(null)
   const [rfqVendors, setRfqVendors] = useState([])
@@ -80,6 +86,10 @@ function App() {
     setView(newView)
   }
 
+  if (isPortalView) {
+    return <VendorPortal initialProjectId={portalProjectId} />
+  }
+
   return (
     <div className="app">
       <header className="app-header sticky top-0 z-50">
@@ -128,6 +138,7 @@ function App() {
           <div className="toolbar-left">
             <div className="project-brand">
               <FaProjectDiagram />
+              <span>Project Name:</span>
               <span>{selectedProject.name}</span>
             </div>
             <nav className="toolbar-nav">
@@ -149,6 +160,18 @@ function App() {
               >
                 <FaEnvelopeOpenText /> <span>RFQ</span>
               </button>
+              <button
+                className={`toolbar-btn ${view === 'quotation' ? 'active' : ''}`}
+                onClick={() => setNavView('quotation')}
+              >
+                <FaHandshake /> <span>Quotation Portal</span>
+              </button>
+              <button
+                className={`toolbar-btn ${view === 'vendor selection' ? 'active' : ''}`}
+                onClick={() => setNavView('vendor selection')}
+              >
+                <FaRankingStar /> <span>Vendor Selection</span>
+              </button>
             </nav>
           </div>
           <div className="toolbar-right">
@@ -166,6 +189,8 @@ function App() {
         {view === 'vendor' && <VendorPage />}
         {view === 'material' && <MaterialManagementPage />}
         {view === 'rfq' && <RFQPage project={selectedProject} vendors={rfqVendors} setView={setNavView} />}
+        {view === 'quotation' && <QuotationPage project={selectedProject} />}
+        {view === 'vendor selection' && <VendorSelectionPage />}
         {view === 'matching-vendor' && (
           <div className="view-container">
             <MatchingVendorsPanel

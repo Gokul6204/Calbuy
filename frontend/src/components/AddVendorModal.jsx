@@ -73,7 +73,11 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
             onSuccess?.()
             onClose()
         } catch (err) {
-            setError(err.message || 'Failed to save vendor.')
+            let msg = err.message || 'Failed to save vendor.'
+            if (msg.toLowerCase().includes('already exists') || msg.toLowerCase().includes('unique')) {
+                msg = 'Email or Mobile Number already exists for another vendor.'
+            }
+            setError(msg)
         } finally {
             setSaving(false)
         }
@@ -90,74 +94,87 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                 </div>
                 <form onSubmit={handleSubmit} className="add-material-form">
                     {error && <p className="add-material-error">{error}</p>}
-                    <label>
-                        Vendor ID <span className="required">*</span>
-                        <input
-                            type="text"
-                            value={vendorId}
-                            onChange={(e) => setVendorId(e.target.value)}
-                            className={errors.vendor_id ? 'field-error' : ''}
-                            placeholder="e.g. V-101"
-                            autoFocus
-                        />
-                    </label>
-                    <label>
-                        Vendor Name <span className="required">*</span>
-                        <input
-                            type="text"
-                            value={vendorName}
-                            onChange={(e) => setVendorName(e.target.value)}
-                            className={errors.vendor_name ? 'field-error' : ''}
-                            placeholder="Company name"
-                        />
-                    </label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                        <label>
-                            Mobile Number <span className="required">*</span>
+                    
+                    <div className="form-grid-row">
+                        <div className="input-group">
+                            <label>Vendor ID <span className="required-star">*</span></label>
+                            <input
+                                type="text"
+                                value={vendorId}
+                                onChange={(e) => setVendorId(e.target.value)}
+                                className={errors.vendor_id ? 'field-error' : ''}
+                                placeholder="e.g. V-101"
+                                autoFocus
+                                required
+                            />
+                        </div>
+                        <div className="input-group grow-2">
+                            <label>Vendor Name <span className="required-star">*</span></label>
+                            <input
+                                type="text"
+                                value={vendorName}
+                                onChange={(e) => setVendorName(e.target.value)}
+                                className={errors.vendor_name ? 'field-error' : ''}
+                                placeholder="Company name"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-grid-row">
+                        <div className="input-group">
+                            <label>Mobile Number <span className="required-star">*</span></label>
                             <input
                                 type="text"
                                 value={mobileNumber}
                                 onChange={(e) => setMobileNumber(e.target.value)}
                                 className={errors.mobile_number ? 'field-error' : ''}
                                 placeholder="e.g. +91 9876543210"
+                                required
                             />
-                        </label>
-                        <label>
-                            Email <span className="required">*</span>
+                        </div>
+                        <div className="input-group">
+                            <label>Email <span className="required-star">*</span></label>
                             <input
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className={errors.email ? 'field-error' : ''}
-                                placeholder="e.g. contact@company.com"
+                                placeholder="contact@company.com"
+                                required
                             />
-                        </label>
+                        </div>
                     </div>
-                    <label>
-                        Location
+
+                    <div className="input-group">
+                        <label>Location <span className="required-star">*</span></label>
                         <input
                             type="text"
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
-                            placeholder="City/State"
+                            placeholder="City, State"
+                            required
                         />
-                    </label>
-                    <label>
-                        Address <span className="required">*</span>
+                    </div>
+
+                    <div className="input-group">
+                        <label>Full Address <span className="required-star">*</span></label>
                         <textarea
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
                             className={errors.address ? 'field-error' : ''}
-                            placeholder="Full office address (Building, Street, ZIP...)"
-                            rows={4}
+                            placeholder="Office address, Building, Street..."
+                            rows={3}
+                            required
                         />
-                    </label>
+                    </div>
+
                     <div className="add-material-actions">
                         <button type="button" className="add-material-btn secondary" onClick={onClose}>
                             Cancel
                         </button>
                         <button type="submit" className="add-material-btn primary" disabled={saving}>
-                            {saving ? 'Saving…' : (isEdit ? 'Save Changes' : 'Add Vendor')}
+                            {saving ? 'Saving...' : (isEdit ? 'Update Vendor' : 'Create Vendor')}
                         </button>
                     </div>
                 </form>

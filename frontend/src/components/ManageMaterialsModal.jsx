@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchVendorMaterials, createVendorMaterial, deleteVendorMaterial } from '../api/vendor'
+import { AddMaterialModal } from './AddMaterialModal'
 import './AddMaterialModal.css'
 import { FaRegTrashAlt } from "react-icons/fa";
 
@@ -8,7 +9,7 @@ export function ManageMaterialsModal({ open, onClose, vendor }) {
     const [materials, setMaterials] = useState([])
     const [newMaterial, setNewMaterial] = useState('')
     const [loading, setLoading] = useState(false)
-    const [submitting, setSubmitting] = useState(false)
+    const [showAddModal, setShowAddModal] = useState(false)
     const [error, setError] = useState(null)
 
     const loadMaterials = useCallback(async () => {
@@ -75,18 +76,20 @@ export function ManageMaterialsModal({ open, onClose, vendor }) {
                 <div className="add-material-form">
                     {error && <p className="add-material-error">{error}</p>}
 
-                    <form onSubmit={handleAdd} className="quick-add-form mobile-column">
-                        <input
-                            type="text"
-                            value={newMaterial}
-                            onChange={(e) => setNewMaterial(e.target.value)}
-                            placeholder="Add new material..."
-                            required
-                        />
-                        <button type="submit" className="add-material-btn primary" disabled={submitting}>
-                            {submitting ? '...' : 'Add'}
+                    <div className="mapping-action-row" style={{ marginBottom: '1.5rem' }}>
+                        <div className="spacer"></div>
+                        <button className="btn btn-primary portal-btn-sm" onClick={() => setShowAddModal(true)}>
+                            Add Material
                         </button>
-                    </form>
+                    </div>
+
+                    <AddMaterialModal 
+                        open={showAddModal} 
+                        onClose={() => setShowAddModal(false)}
+                        onSuccess={loadMaterials}
+                        vendorId={vendor.id}
+                        mode="vendor"
+                    />
 
                     <div className="materials-list-section">
                         <label>Mapped Materials</label>
@@ -98,7 +101,10 @@ export function ManageMaterialsModal({ open, onClose, vendor }) {
                             <div className="material-scroll-list inset">
                                 {materials.map((m) => (
                                     <div key={m.id} className="material-row mini">
-                                        <span>{m.material}</span>
+                                        <div className="m-info">
+                                            {m.part_number && <span className="m-pn">{m.part_number}</span>}
+                                            <span className="m-name">{m.material}</span>
+                                        </div>
                                         <button
                                             className="delete-mini"
                                             onClick={() => handleDelete(m.id)}

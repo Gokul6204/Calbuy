@@ -42,3 +42,8 @@ export async function updateProject(id, projectData) {
     })
     return handleResponse(res)
 }
+
+export async function fetchProjectQuotations(projectId) {
+    const res = await fetch(`${API_BASE}/projects/${projectId}/quotations/`)
+    return handleResponse(res)
+}

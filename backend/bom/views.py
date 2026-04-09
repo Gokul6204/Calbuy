@@ -116,6 +116,11 @@ class BOMListView(APIView):
         project_id = request.query_params.get("project_id")
         if project_id:
             qs = qs.filter(project_id=project_id)
+            
+        confirmed_only = request.query_params.get("confirmed_only")
+        if confirmed_only == "true":
+            qs = qs.filter(selected_quotation__isnull=False)
+
         bom_id = request.query_params.get("bom_id")
         if bom_id:
             qs = qs.filter(bom_id__icontains=bom_id)

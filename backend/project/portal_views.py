@@ -75,7 +75,7 @@ class VendorPortalLoginView(APIView):
             is_valid_pw = (password == access.access_password) or (password == project.project_password)
             
             if not is_valid_pw:
-                return Response({"error": "Invalid password. Please check the credentials in your RFQ email."}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({"error": "Invalid password for this project. Please check the credentials in your RFQ email."}, status=status.HTTP_401_UNAUTHORIZED)
             
             # Record login activity
             from django.utils import timezone
@@ -134,18 +134,21 @@ class RequiredItemsView(APIView):
             "part_number": b.part_number,
             "quantity": b.quantity,
             "expected_date": b.date_of_requirement,
-            "deadline": deadline_map.get(b.material) or project.created_at # Real deadline or project creation
+            "deadline": deadline_map.get(b.material) or project.created_at,
+            "count": Quotation.objects.filter(project=project, vendor_id=vendor_id, material_name=b.material).values_list('count', flat=True).first()
         } for b in bom_items])
 
 class VendorQuotationView(APIView):
     def get(self, request, project_id, vendor_id):
         # Fetch current quotations submitted by this vendor for this project
+        # Ensure we are strictly bound to this project ID
         quotes = Quotation.objects.filter(project_id=project_id, vendor_id=vendor_id)
         # In a real app, we'd also return the list of items they SHOULD quote for
         return Response([{
             "id": q.id,
             "material_name": q.material_name,
             "price": q.price,
+            "count": q.count,
             "lead_time": q.lead_time_days,
             "notes": q.notes,
             "submitted_at": q.submitted_at
@@ -156,20 +159,34 @@ class VendorQuotationView(APIView):
         project = get_object_or_404(Project, pk=project_id)
         data = request.data
         
-        # In a real app, you'd use a Serializer
-        quote, created = Quotation.objects.update_or_create(
+        # To handle placeholders, find existing quote by material name (case-insensitive)
+        quote = Quotation.objects.filter(
             project=project,
             vendor_id=vendor_id,
-            bom_item_id=data.get("bom_item_id", 0),
-            material_name=data.get("material_name"), # Unique per material too
-            defaults={
-                "price": data.get("price"),
-                "lead_time_days": data.get("lead_time"),
-                "notes": f"Location: {data.get('location')}. {data.get('notes')}",
-                "count": data.get("count"), # Assuming we add this field to Quotation model
-                "company_id": project.company_id # Inherit from project
-            }
-        )
+            material_name__iexact=data.get("material_name")
+        ).first()
+
+        if quote:
+            # Update existing placeholder or previous submission
+            quote.price = data.get("price")
+            quote.lead_time_days = data.get("lead_time")
+            quote.notes = f"Location: {data.get('location')}. {data.get('notes')}"
+            quote.count = data.get("count")
+            quote.bom_item_id = data.get("bom_item_id", 0)  # Bind it to the BOM item now
+            quote.save()
+        else:
+            # Create a brand new one if no placeholder exists
+            quote = Quotation.objects.create(
+                project=project,
+                vendor_id=vendor_id,
+                bom_item_id=data.get("bom_item_id", 0),
+                material_name=data.get("material_name"),
+                price=data.get("price"),
+                lead_time_days=data.get("lead_time"),
+                notes=f"Location: {data.get('location')}. {data.get('notes')}",
+                count=data.get("count"),
+                company_id=project.company_id
+            )
         
         # Real-time Broadcast: Notify admin that quotation was submitted
         from Calbuy_procurement.realtime import broadcast_company_event

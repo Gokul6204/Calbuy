@@ -61,11 +61,11 @@ class SendRfqEmailView(APIView):
                                 deadline_val = rfq.get("deadline")
                                 if deadline_val:
                                     material = rfq.get("material", "unknown")
-                                    # Use filter().first() to avoid MultipleObjectsReturned if duplicates exist
+                                    # Use case-insensitive material matching to avoid duplicate rows
                                     quote = Quotation.objects.filter(
                                         project=project,
                                         vendor_id=v_id,
-                                        material_name=material
+                                        material_name__iexact=material
                                     ).first()
                                     
                                     if quote:
@@ -125,10 +125,15 @@ class VendorListCreateView(APIView):
                 payload=VendorDetailsSerializer(vendor).data,
                 sender_id=request.user.id if request.user.is_authenticated else None
             )
-        except IntegrityError:
+        except IntegrityError as e:
             return Response(
-                {"error": "vendor_id already exists."},
+                {"error": f"Database integrity error: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {"error": f"Internal server error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         return Response(VendorDetailsSerializer(vendor).data, status=status.HTTP_201_CREATED)
 
@@ -235,7 +240,7 @@ class MatchVendorsView(APIView):
         
         # Get unique vendors from these materials
         v_ids = matching_v_materials.values_list("vendor_id", flat=True)
-        vendors_qs = VendorDetails.objects.filter(vendor_id__in=v_ids)
+        vendors_qs = VendorDetails.objects.filter(vendor_id__in=v_ids, is_active=True)
         
         if location:
             vendors_qs = vendors_qs.filter(location__icontains=location.strip())

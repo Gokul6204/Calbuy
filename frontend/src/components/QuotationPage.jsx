@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { FaHandshake, FaFileAlt, FaCheckCircle, FaTrash, FaExclamationCircle, FaEnvelopeOpenText, FaClock } from 'react-icons/fa'
+import { FaRankingStar } from "react-icons/fa6";
 import { fetchProjectQuotations } from '../api/project'
 import { useWebSocket } from '../context/WebSocketContext'
 import './QuotationPage.css'
 
-export function QuotationPage({ project }) {
+export function QuotationPage({ project, onSelectVendor }) {
     const { subscribe, isConnected } = useWebSocket()
     const [submissions, setSubmissions] = useState([])
     const [selectedSubmission, setSelectedSubmission] = useState(null)
@@ -46,6 +47,14 @@ export function QuotationPage({ project }) {
                         <h2>Quotation Submissions</h2>
                         <p>Track and analyze vendor responses for {project?.name}</p>
                     </div>
+                </div>
+                <div className="header-right">
+                    <button 
+                        className="btn btn-select-vendor-ai"
+                        onClick={onSelectVendor}
+                    >
+                        <FaRankingStar style={{ marginRight: '8px' }} /> Select Vendor
+                    </button>
                 </div>
             </header>
 

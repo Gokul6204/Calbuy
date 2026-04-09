@@ -9,7 +9,13 @@ async function handleResponse(res) {
         throw new Error(text || res.statusText || 'Request failed')
     }
     if (!res.ok) {
-        throw new Error(data?.error || data?.detail || JSON.stringify(data) || res.statusText)
+        let errorMessage = 'Request failed'
+        if (data) {
+            errorMessage = data.error || data.detail || JSON.stringify(data)
+        } else {
+            errorMessage = `Server error ${res.status}: ${res.statusText}`
+        }
+        throw new Error(errorMessage)
     }
     return data
 }

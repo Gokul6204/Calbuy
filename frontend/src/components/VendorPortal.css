@@ -474,23 +474,51 @@
     align-items: flex-end;
 }
 
-.submitted-notice {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    color: #0d9488;
-    font-weight: 600;
+.rfq-portal-card.status-submitted {
+    border-left: 5px solid #10b981;
 }
 
-.submission-actions {
+.submission-actions-unified {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    gap: 0.75rem;
     width: 100%;
 }
 
-.rfq-portal-card.status-submitted {
-    border-left: 5px solid #0d9488;
+.submitted-notice-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #059669;
+    font-weight: 700;
+    font-size: 0.8rem;
+    background: #ecfdf5;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.portal-btn-main {
+    width: 100%;
+    padding: 1rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 12px;
+}
+
+.btn-secondary.portal-btn-main {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.btn-secondary.portal-btn-main:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    border-color: #94a3b8;
 }
 
 /* Form View Polish */

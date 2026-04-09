@@ -1,0 +1,272 @@
+.po-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    grid-template-rows: 1fr auto;
+    gap: 1.25rem;
+    height: calc(100vh - 180px);
+    animation: slideIn 0.4s ease-out;
+}
+
+.po-sidebar {
+    grid-row: 1 / 2;
+    background: white;
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.po-sidebar h3 {
+    font-size: 1rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.order-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.order-item {
+    background: #f8fafc;
+    border: 1px solid #eef2f6;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: left;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.order-item:hover {
+    background: #edf2f7;
+    transform: translateX(5px);
+}
+
+.order-item.active {
+    background: #4f46e5;
+    border-color: #4338ca;
+    color: white;
+}
+
+.mat-name {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.vendor-lbl {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* PO Document Styling */
+.po-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.po-document-scroller {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 1rem;
+    margin-bottom: 1rem;
+}
+
+.po-document {
+    background: white;
+    width: 21cm;
+    min-height: 29.7cm;
+    margin: 0 auto 2rem auto;
+    padding: 2cm;
+    border-radius: 4px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #cbd5e1;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    color: #1e293b;
+}
+
+.doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid #334155;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+.doc-type {
+    font-size: 24pt;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.05em;
+}
+
+.doc-id {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #4f46e5;
+}
+
+.doc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 2.5rem;
+}
+
+.doc-col h4 {
+    font-size: 10pt;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.doc-box {
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    line-height: 1.6;
+    font-size: 11pt;
+    border: 1px solid transparent;
+}
+
+.editable:focus {
+    outline: 2px dashed #4f46e5;
+    background: white;
+}
+
+.doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 3rem;
+    font-size: 11pt;
+}
+
+.doc-table th {
+    background: #1e293b;
+    color: white;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.doc-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.total-amt {
+    font-size: 14pt;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.doc-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: auto; /* Pushes footer to bottom of A4 if content is short */
+    padding-top: 3rem;
+}
+
+.terms h5 {
+    margin-bottom: 0.5rem;
+    font-size: 11pt;
+    color: #334155;
+    font-weight: 800;
+}
+
+.terms ul {
+    font-size: 10pt;
+    color: #475569;
+    padding-left: 1.2rem;
+    line-height: 1.5;
+}
+
+.signature {
+    text-align: center;
+    align-self: flex-end;
+}
+
+.sig-line {
+    border-top: 1.5px solid #334155;
+    padding-top: 0.5rem;
+    width: 200px;
+    font-weight: 700;
+    font-size: 11pt;
+    color: #334155;
+}
+
+.po-actions {
+    grid-row: 2 / 3;
+    grid-column: 1 / 3;
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    background: white;
+    padding: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.po-actions .btn {
+    min-width: 160px;
+}
+
+.doc-box.active,
+.editable.active,
+.terms ul.active {
+    outline: 2px dashed #4f46e5;
+    background: #fff;
+    cursor: text;
+}
+
+.doc-table td[contenteditable="true"] {
+    background: #fffef0;
+    outline: 1px dashed #4f46e5;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.po-actions .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

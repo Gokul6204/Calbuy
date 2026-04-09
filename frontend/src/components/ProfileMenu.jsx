@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { FaUserCircle, FaMoon, FaSun, FaDesktop } from 'react-icons/fa';
+import { FaUserCircle, FaMoon, FaSun, FaDesktop, FaSignOutAlt, FaUser } from 'react-icons/fa';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import './ProfileMenu.css';
 
-export function ProfileMenu() {
+export function ProfileMenu({ onProfileClick, onLogout }) {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef(null);
     const { theme, setTheme } = useTheme();
+    const { user, logout } = useAuth();
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -18,6 +20,17 @@ export function ProfileMenu() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const handleLogout = () => {
+        logout();
+        setIsOpen(false);
+        if (onLogout) onLogout();
+    };
+
+    const handleProfileClick = () => {
+        setIsOpen(false);
+        if (onProfileClick) onProfileClick();
+    };
+
     return (
         <div className="profile-menu-container" ref={menuRef}>
             <button className="profile-btn" onClick={() => setIsOpen(!isOpen)} aria-label="Profile menu">
@@ -27,33 +40,50 @@ export function ProfileMenu() {
             {isOpen && (
                 <div className="profile-dropdown">
                     <div className="dropdown-header">
-                        <span className="user-name">Admin User</span>
-                        <span className="user-role">Procurement Manager</span>
+                        <span className="user-name">{user?.organization_name || 'User'}</span>
+                        <span className="user-role">{user?.email}</span>
                     </div>
                     
                     <div className="dropdown-divider"></div>
                     
+                    <button className="dropdown-item" onClick={handleProfileClick}>
+                        <FaUser /> View Profile
+                    </button>
+
+                    <div className="dropdown-divider"></div>
+                    
                     <div className="theme-options">
                         <div className="theme-options-title">Theme Preference</div>
-                        <button 
-                            className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
-                            onClick={() => setTheme('light')}
-                        >
-                            <FaSun /> Light
-                        </button>
-                        <button 
-                            className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
-                            onClick={() => setTheme('dark')}
-                        >
-                            <FaMoon /> Dark
-                        </button>
-                        <button 
-                            className={`theme-btn ${theme === 'system' ? 'active' : ''}`}
-                            onClick={() => setTheme('system')}
-                        >
-                            <FaDesktop /> System
-                        </button>
+                        <div className="theme-btn-group">
+                            <button 
+                                className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
+                                onClick={() => setTheme('light')}
+                                title="Light Mode"
+                            >
+                                <FaSun />
+                            </button>
+                            <button 
+                                className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
+                                onClick={() => setTheme('dark')}
+                                title="Dark Mode"
+                            >
+                                <FaMoon />
+                            </button>
+                            <button 
+                                className={`theme-btn ${theme === 'system' ? 'active' : ''}`}
+                                onClick={() => setTheme('system')}
+                                title="System Default"
+                            >
+                                <FaDesktop />
+                            </button>
+                        </div>
                     </div>
+
+                    <div className="dropdown-divider"></div>
+
+                    <button className="dropdown-item logout-item" onClick={handleLogout}>
+                        <FaSignOutAlt /> Logout
+                    </button>
                 </div>
             )}
         </div>

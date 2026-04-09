@@ -8,3 +8,8 @@ Pillow>=10.0.0
 channels>=4.0.0
 daphne>=4.0.0
 channels-redis>=4.0.0
+django-environ
+pandas
+numpy
+scikit-learn
+joblib

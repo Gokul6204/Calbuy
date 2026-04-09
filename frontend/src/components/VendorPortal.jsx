@@ -54,14 +54,23 @@ export function VendorPortal({ initialProjectId }) {
 
             // Merge them: if an item has a quote, mark it as submitted and include its data
             const merged = items.map(item => {
-                const q = quotes.find(quote => quote.material_name === item.material);
-                const isRealSubmission = q && (q.price !== null || q.count !== null);
+                // Robust case-insensitive and trimmed matching
+                const q = quotes.find(quote => 
+                    (quote.material_name || '').trim().toLowerCase() === (item.material || '').trim().toLowerCase()
+                );
+                
+                // Robust check: Has the vendor actually provided data?
+                // Using != null to catch both null and undefined, and ensuring the value isn't an empty string
+                const hasPrice = q && q.price !== null && q.price !== undefined && q.price !== '';
+                const hasCount = q && q.count !== null && q.count !== undefined && q.count !== '';
+                const isRealSubmission = hasPrice || hasCount;
 
                 if (isRealSubmission) {
                     return {
                         ...item,
                         status: 'submitted',
                         price: q.price,
+                        count: q.count,
                         lead_time: q.lead_time_days || q.lead_time,
                         notes: q.notes,
                         existing_quote_id: q.id
@@ -100,12 +109,18 @@ export function VendorPortal({ initialProjectId }) {
             const items = await fetchPortalItems(auth.project_id, auth.vendor_id);
             const quotes = await fetchVendorQuotations(auth.project_id, auth.vendor_id);
             const merged = items.map(item => {
-                const q = quotes.find(quote => quote.material_name === item.material);
-                const isRealSubmission = q && (q.price !== null || q.count !== null);
+                const q = quotes.find(quote => 
+                    (quote.material_name || '').trim().toLowerCase() === (item.material || '').trim().toLowerCase()
+                );
+                const hasPrice = q && q.price !== null && q.price !== undefined && q.price !== '';
+                const hasCount = q && q.count !== null && q.count !== undefined && q.count !== '';
+                const isRealSubmission = hasPrice || hasCount;
+
                 return isRealSubmission ? {
                     ...item,
                     status: 'submitted',
                     price: q.price,
+                    count: q.count,
                     lead_time: q.lead_time_days || q.lead_time,
                     notes: q.notes,
                     existing_quote_id: q.id
@@ -190,7 +205,8 @@ export function VendorPortal({ initialProjectId }) {
             // Try to parse location from notes if it was concatenated
             let location = '';
             let notes = rfq.notes || '';
-            if (notes.startsWith('Location: ')) {
+            // Safety check for notes
+            if (notes && notes.startsWith('Location: ')) {
                 const parts = notes.split('. ');
                 location = parts[0].replace('Location: ', '');
                 notes = parts.slice(1).join('. ');
@@ -199,9 +215,9 @@ export function VendorPortal({ initialProjectId }) {
             setSubmission({
                 part_number: rfq.part_number || '',
                 material_name: rfq.material || '',
-                count: rfq.quantity || '',
+                count: rfq.status === 'submitted' ? (rfq.count || rfq.quantity) : (rfq.quantity || ''),
                 location: location,
-                lead_time: rfq.lead_time || '',
+                lead_time: rfq.lead_time || rfq.lead_time_days || '',
                 price: rfq.price || '',
                 notes: notes
             });
@@ -223,7 +239,12 @@ export function VendorPortal({ initialProjectId }) {
                             <span className="label">ACTIVE PROJECT</span>
                             <span className="value">{auth.project}</span>
                         </div>
-                        <button className="btn-logout" onClick={() => setView('login')}>Logout</button>
+                        <button className="btn-logout" onClick={() => {
+                            setAuth(null);
+                            setRfqs([]);
+                            setCredentials(prev => ({ ...prev, password: '' })); // Keep email but clear password
+                            setView('login');
+                        }}>Logout</button>
                     </div>
                 </header>
 
@@ -262,29 +283,20 @@ export function VendorPortal({ initialProjectId }) {
                                                 </div>
                                             </div>
                                             <div className="card-footer-portal">
-                                                {r.status === 'submitted' ? (
-                                                    <div className="submission-actions">
-                                                        <div className="submitted-notice">
-                                                            <FaCheckCircle /> Quotation Submitted
-                                                        </div>
-                                                        {!pastDeadline && (
-                                                            <button
-                                                                className="btn btn-secondary portal-btn-sm mt-3"
-                                                                onClick={() => handleActionClick(r)}
-                                                            >
-                                                                Edit & Resubmit
-                                                            </button>
-                                                        )}
+                                            <div className="submission-actions-unified">
+                                                {r.status === 'submitted' && (
+                                                    <div className="submitted-notice-inline">
+                                                        <FaCheckCircle /> Quotation Submitted
                                                     </div>
-                                                ) : (
-                                                    <button
-                                                        className="btn btn-primary portal-btn"
-                                                        disabled={pastDeadline}
-                                                        onClick={() => handleActionClick(r)}
-                                                    >
-                                                        {pastDeadline ? "Submission Closed" : "Submit Quotation"}
-                                                    </button>
                                                 )}
+                                                <button
+                                                    className={`btn ${r.status === 'submitted' ? 'btn-secondary' : 'btn-primary'} portal-btn-main`}
+                                                    disabled={pastDeadline}
+                                                    onClick={() => handleActionClick(r)}
+                                                >
+                                                    {pastDeadline ? "Submission Closed" : (r.status === 'submitted' ? "Edit & Resubmit" : "Submit Quotation")}
+                                                </button>
+                                            </div>
                                             </div>
                                         </div>
                                     );

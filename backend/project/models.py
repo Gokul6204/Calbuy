@@ -39,6 +39,7 @@ class Quotation(models.Model):
     lead_time_days = models.CharField(max_length=100, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
     attachment = models.FileField(upload_to='quotations/', null=True, blank=True)
+    shipment_from_location = models.CharField(max_length=255, null=True, blank=True)
     submission_deadline = models.DateTimeField(null=True, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -15,26 +15,35 @@ class ProjectListCreateView(generics.ListCreateAPIView):
     queryset = Project.objects.all().order_by('-id')
     serializer_class = ProjectSerializer
     
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     def perform_create(self, serializer):
-        # Generate a random strong password for the project
-        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-        project_password = ''.join(secrets.choice(alphabet) for i in range(12))
-        
-        # Determine company_id from user or default
-        company_id = getattr(self.request.user, 'company_id', 1)
-        
-        project = serializer.save(
-            project_password=project_password,
-            company_id=company_id
-        )
-        
-        # Real-time Broadcast
-        broadcast_company_event(
-            company_id=company_id,
-            action_type="project_updated",
-            payload=ProjectSerializer(project).data,
-            sender_id=self.request.user.id if self.request.user.is_authenticated else None
-        )
+        try:
+            # Generate a random strong password for the project
+            alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+            project_password = ''.join(secrets.choice(alphabet) for i in range(12))
+            
+            # Determine company_id from user or default
+            company_id = getattr(self.request.user, 'company_id', 1)
+            
+            project = serializer.save(
+                project_password=project_password,
+                company_id=company_id
+            )
+            
+            # Real-time Broadcast
+            broadcast_company_event(
+                company_id=company_id,
+                action_type="project_updated",
+                payload=ProjectSerializer(project).data,
+                sender_id=self.request.user.id if self.request.user.is_authenticated else None
+            )
+        except Exception as e:
+            raise e
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
@@ -88,7 +97,7 @@ class ProjectQuotationListView(APIView):
                 results.append({
                     "id": quote.id if quote else f"p-{access.id}-{mat}",
                     "vendor_id": access.vendor_id,
-                    "vendor_name": vendors_map.get(access.vendor_id, "Unknown Vendor"),
+                    "vendor_name": vendors_map.get(access.vendor_id) or f"Vendor ({access.vendor_email})",
                     "material": mat,
                     "price": quote.price if is_submitted else None,
                     "lead_time": quote.lead_time_days if is_submitted else None,

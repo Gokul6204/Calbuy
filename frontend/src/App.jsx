@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { HomePage } from './components/HomePage'
+import { LoginPage } from './components/LoginPage'
+import { RegisterPage } from './components/RegisterPage'
+import { ProfilePage } from './components/ProfilePage'
 import { BOMPage } from './components/BOMPage'
 import { MatchingVendorsPanel } from './components/MatchingVendorsPanel'
 import { VendorPage } from './components/VendorPage'
@@ -7,17 +10,20 @@ import { MaterialManagementPage } from './components/MaterialManagementPage'
 import { RFQPage } from './components/RFQPage'
 import { QuotationPage } from './components/QuotationPage'
 import { VendorSelectionPage } from './components/VendorSelectionPage'
+import { PurchaseOrderPage } from './components/PurchaseOrderPage'
 import { ProjectPage } from './components/ProjectPage'
 import { VendorPortal } from './components/VendorPortal'
 import { fetchBOMList } from './api/bom'
 import { updateProject } from './api/project'
 import { ProfileMenu } from './components/ProfileMenu'
-import { FaHome, FaIndustry, FaBoxOpen, FaHandshake, FaEnvelopeOpenText, FaFileAlt, FaProjectDiagram } from 'react-icons/fa'
+import { FaHome, FaIndustry, FaBoxOpen, FaHandshake, FaEnvelopeOpenText, FaFileAlt, FaProjectDiagram, FaFileInvoice } from 'react-icons/fa'
 import { FaRankingStar } from "react-icons/fa6";
+import { useAuth } from './context/AuthContext'
 import './App.css'
 
 function App() {
-  const [view, setView] = useState('home') // 'home', 'projects', 'vendor', 'material', 'matching-vendor', or 'rfq'
+  const { isAuthenticated } = useAuth()
+  const [view, setView] = useState('home')
   const isPortalView = window.location.pathname.startsWith('/portal/')
   const portalProjectId = isPortalView ? window.location.pathname.split('/')[2] : null
   const [selectedProject, setSelectedProject] = useState(null)
@@ -28,7 +34,6 @@ function App() {
   useEffect(() => {
     if (selectedProject) {
       loadProjectBOMs()
-      // Restore previously saved flow states from the project object
       setMatchedVendors(selectedProject.last_matched_vendors || null)
       setRfqVendors(selectedProject.last_rfq_vendors || [])
     } else {
@@ -42,7 +47,6 @@ function App() {
     if (!selectedProject?.id) return
     try {
       await updateProject(selectedProject.id, updates)
-      // Update local object to keep it in sync
       setSelectedProject(prev => prev ? ({ ...prev, ...updates }) : null)
     } catch (err) {
       console.error("Failed to persist process state:", err)
@@ -75,11 +79,11 @@ function App() {
 
   const handleSelectProject = (project) => {
     setSelectedProject(project)
-    setNavView('bom') // Proceed to BOM after selecting a project
+    setNavView('bom')
   }
 
   const setNavView = (newView) => {
-    const globalViews = ['home', 'projects', 'vendor', 'material']
+    const globalViews = ['home', 'projects', 'vendor', 'material', 'profile']
     if (globalViews.includes(newView)) {
       setSelectedProject(null)
     }
@@ -89,6 +93,8 @@ function App() {
   if (isPortalView) {
     return <VendorPortal initialProjectId={portalProjectId} />
   }
+
+  const showNavbar = isAuthenticated && !['login', 'register'].includes(view)
 
   return (
     <div className="app">
@@ -101,39 +107,41 @@ function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <nav className="header-nav">
-            <button
-              className={`nav-btn ${view === 'home' ? 'active' : ''}`}
-              onClick={() => setNavView('home')}
-            >
-              <FaHome /> <span>Home</span>
-            </button>
-            <button
-              className={`nav-btn ${view === 'projects' ? 'active' : ''}`}
-              onClick={() => setNavView('projects')}
-            >
-              <FaProjectDiagram /> <span>Project</span>
-            </button>
-            <button
-              className={`nav-btn ${view === 'vendor' ? 'active' : ''}`}
-              onClick={() => setNavView('vendor')}
-            >
-              <FaIndustry /> <span>Vendors</span>
-            </button>
-            <button
-              className={`nav-btn ${view === 'material' ? 'active' : ''}`}
-              onClick={() => setNavView('material')}
-            >
-              <FaBoxOpen /> <span>Materials</span>
-            </button>
-          </nav>
+        {showNavbar && (
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <nav className="header-nav">
+              <button
+                className={`nav-btn ${view === 'home' ? 'active' : ''}`}
+                onClick={() => setNavView('home')}
+              >
+                <FaHome /> <span>Home</span>
+              </button>
+              <button
+                className={`nav-btn ${view === 'projects' ? 'active' : ''}`}
+                onClick={() => setNavView('projects')}
+              >
+                <FaProjectDiagram /> <span>Project</span>
+              </button>
+              <button
+                className={`nav-btn ${view === 'vendor' ? 'active' : ''}`}
+                onClick={() => setNavView('vendor')}
+              >
+                <FaIndustry /> <span>Vendors</span>
+              </button>
+              <button
+                className={`nav-btn ${view === 'material' ? 'active' : ''}`}
+                onClick={() => setNavView('material')}
+              >
+                <FaBoxOpen /> <span>Materials</span>
+              </button>
+            </nav>
 
-          <ProfileMenu />
-        </div>
+            <ProfileMenu onProfileClick={() => setNavView('profile')} onLogout={() => setNavView('home')} />
+          </div>
+        )}
       </header>
 
-      {selectedProject && (
+      {selectedProject && showNavbar && (
         <div className="project-toolbar">
           <div className="toolbar-left">
             <div className="project-brand">
@@ -172,6 +180,12 @@ function App() {
               >
                 <FaRankingStar /> <span>Vendor Selection</span>
               </button>
+              <button
+                className={`toolbar-btn ${view === 'purchase-order' ? 'active' : ''}`}
+                onClick={() => setNavView('purchase-order')}
+              >
+                <FaFileInvoice /> <span>Purchase Order</span>
+              </button>
             </nav>
           </div>
           <div className="toolbar-right">
@@ -183,23 +197,34 @@ function App() {
       )}
 
       <main className="app-main">
-        {view === 'home' && <HomePage onGetStarted={() => setNavView('projects')} />}
-        {view === 'projects' && <ProjectPage onSelectProject={handleSelectProject} />}
-        {view === 'bom' && <BOMPage project={selectedProject} bomList={bomList} setBomList={setBomList} setMatchedVendors={handleSetMatchedVendors} setView={setNavView} />}
-        {view === 'vendor' && <VendorPage />}
-        {view === 'material' && <MaterialManagementPage />}
-        {view === 'rfq' && <RFQPage project={selectedProject} vendors={rfqVendors} setView={setNavView} />}
-        {view === 'quotation' && <QuotationPage project={selectedProject} />}
-        {view === 'vendor selection' && <VendorSelectionPage />}
-        {view === 'matching-vendor' && (
-          <div className="view-container">
-            <MatchingVendorsPanel
-              vendors={matchedVendors}
-              onClose={() => setNavView('bom')}
-              isPageView={true}
-              onSendMail={handleSendMail}
-            />
-          </div>
+        {view === 'home' && <HomePage onGetStarted={() => setNavView(isAuthenticated ? 'projects' : 'login')} />}
+        {view === 'login' && <LoginPage onLoginSuccess={() => setNavView('projects')} onGoToRegister={() => setNavView('register')} />}
+        {view === 'register' && <RegisterPage onRegisterSuccess={() => setNavView('login')} onGoToLogin={() => setNavView('login')} />}
+        {view === 'profile' && <ProfilePage />}
+        
+        {isAuthenticated ? (
+          <>
+            {view === 'projects' && <ProjectPage onSelectProject={handleSelectProject} />}
+            {view === 'bom' && <BOMPage project={selectedProject} bomList={bomList} setBomList={setBomList} setMatchedVendors={handleSetMatchedVendors} setView={setNavView} />}
+            {view === 'vendor' && <VendorPage />}
+            {view === 'material' && <MaterialManagementPage />}
+            {view === 'rfq' && <RFQPage project={selectedProject} vendors={rfqVendors} setView={setNavView} />}
+            {view === 'quotation' && <QuotationPage project={selectedProject} onSelectVendor={() => setNavView('vendor selection')} />}
+            {view === 'vendor selection' && <VendorSelectionPage project={selectedProject} bomList={bomList} setView={setNavView} />}
+            {view === 'purchase-order' && <PurchaseOrderPage project={selectedProject} />}
+            {view === 'matching-vendor' && (
+              <div className="view-container">
+                <MatchingVendorsPanel
+                  vendors={matchedVendors}
+                  onClose={() => setNavView('bom')}
+                  isPageView={true}
+                  onSendMail={handleSendMail}
+                />
+              </div>
+            )}
+          </>
+        ) : (
+          !['home', 'login', 'register'].includes(view) && setNavView('login')
         )}
       </main>
     </div>

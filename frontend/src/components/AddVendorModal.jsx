@@ -130,6 +130,8 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                                 onChange={(e) => setMobileNumber(e.target.value)}
                                 className={errors.mobile_number ? 'field-error' : ''}
                                 placeholder="e.g. +91 9876543210"
+                                minLength={10}
+                                maxLength={10}
                                 required
                             />
                         </div>

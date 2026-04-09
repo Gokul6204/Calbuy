@@ -27,6 +27,9 @@ class BOM(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     source_file = models.CharField(max_length=255, blank=True, help_text="Original filename")
+    
+    # Selection Tracking
+    selected_quotation = models.ForeignKey('project.Quotation', on_delete=models.SET_NULL, null=True, blank=True, related_name="confirmed_on_bom")
 
     class Meta:
         db_table = "bom"

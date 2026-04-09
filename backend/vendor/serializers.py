@@ -7,7 +7,7 @@ class VendorDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorDetails
         fields = ["id", "company_id", "vendor_id", "vendor_name", "mobile_number", "email", "location", "address", "is_active", "created_at"]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "company_id", "created_at"]
 
 
 class VendorMaterialInfoSerializer(serializers.ModelSerializer):

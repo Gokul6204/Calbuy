@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { ensureCsrfCookie } from '../api/http';
 import './LoginPage.css';
 
 export function LoginPage({ onLoginSuccess, onGoToRegister }) {
@@ -15,10 +16,13 @@ export function LoginPage({ onLoginSuccess, onGoToRegister }) {
         setLoading(true);
 
         try {
+            const normalizedEmail = email.trim().toLowerCase();
+            await ensureCsrfCookie();
             const response = await fetch('/api/accounts/login/', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email: normalizedEmail, password }),
             });
 
             const data = await response.json();
@@ -43,11 +47,11 @@ export function LoginPage({ onLoginSuccess, onGoToRegister }) {
                     <h2>Welcome Back</h2>
                     <p>Enter your credentials to access your account</p>
                 </div>
-                
+
                 {error && <div className="auth-error">{error}</div>}
-                
+
                 <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-group">
+                    <div className="form-Grade">
                         <label htmlFor="email">Email Address</label>
                         <input
                             id="email"
@@ -58,8 +62,8 @@ export function LoginPage({ onLoginSuccess, onGoToRegister }) {
                             required
                         />
                     </div>
-                    
-                    <div className="form-group">
+
+                    <div className="form-Grade">
                         <label htmlFor="password">Password</label>
                         <input
                             id="password"
@@ -70,12 +74,12 @@ export function LoginPage({ onLoginSuccess, onGoToRegister }) {
                             required
                         />
                     </div>
-                    
+
                     <button type="submit" className="auth-submit-btn" disabled={loading}>
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
-                
+
                 <div className="auth-footer">
                     <p>Don't have an account? <button onClick={onGoToRegister} className="auth-link">Register here</button></p>
                 </div>

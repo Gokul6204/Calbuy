@@ -1,10 +1,11 @@
 .auth-container {
     min-height: 100vh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 2rem;
+    padding: 3rem 2rem;
+    overflow-y: auto;
 }
 
 [data-theme='dark'] .auth-container {
@@ -21,6 +22,12 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+/* Wider variant for the registration page */
+.auth-card--wide {
+    max-width: 780px;
+}
+
 
 [data-theme='dark'] .auth-card {
     background: rgba(30, 32, 44, 0.8);
@@ -51,7 +58,7 @@
     color: #aaa;
 }
 
-.auth-form .form-group {
+.auth-form .form-Group {
     margin-bottom: 1.5rem;
 }
 
@@ -152,4 +159,13 @@
 
 .auth-link:hover {
     text-decoration: underline;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.half-width {
+    flex: 1;
 }

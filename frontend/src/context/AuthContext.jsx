@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { ensureCsrfCookie, csrfHeaders } from '../api/http';
 
 const AuthContext = createContext();
 
@@ -20,9 +21,20 @@ export function AuthProvider({ children }) {
         localStorage.setItem('user', JSON.stringify(userData));
     };
 
-    const logout = () => {
-        setUser(null);
-        localStorage.removeItem('user');
+    const logout = async () => {
+        try {
+            await ensureCsrfCookie();
+            await fetch('/api/accounts/logout/', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { ...csrfHeaders() },
+            });
+        } catch {
+            // Ignore network/logout errors; still clear local session.
+        } finally {
+            setUser(null);
+            localStorage.removeItem('user');
+        }
     };
 
     const updateProfile = (updatedData) => {

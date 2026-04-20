@@ -179,9 +179,10 @@ export function MaterialManagementPage() {
                                         {materials.map(m => (
                                             <div key={m.id} className="material-row">
                                                 <div className="m-info">
-                                                    {m.part_number && <span className="m-pn">{m.part_number}</span>}
-                                                    {m.part_number && <span className="m-sep">-</span>}
-                                                    <span className="m-name">{m.material}</span>
+                                                    <span className="m-name" style={{ fontWeight: 600 }}>
+                                                        {m.part_name || m.part || `Material #${m.id}`}
+                                                    </span>
+                                                    {!m.part_name && m.part && <span className="m-id-tag">{m.part}</span>}
                                                 </div>
                                                 <button
                                                     className="delete-mini"

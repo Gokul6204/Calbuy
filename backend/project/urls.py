@@ -5,6 +5,7 @@ urlpatterns = [
     path('projects/', views.ProjectListCreateView.as_view(), name='project-list-create'),
     path('projects/<int:pk>/', views.ProjectDetailView.as_view(), name='project-detail'),
     path('projects/<int:project_id>/quotations/', views.ProjectQuotationListView.as_view()),
+    path('projects/<int:project_id>/issue-po/', views.IssuePOView.as_view()),
     
     # Vendor Portal URLs
     path('projects/<int:project_id>/portal-access/', portal_views.GeneratePortalAccessView.as_view()),

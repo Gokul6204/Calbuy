@@ -1,17 +1,23 @@
 import pandas as pd
 import joblib
 import os
+import sys
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
+
 try:
-    from .preprocessing import VendorDataPreprocessor
-except (ImportError, ValueError):
     from vendor_selection_ai.ml.preprocessing import VendorDataPreprocessor
+except ImportError:
+    from preprocessing import VendorDataPreprocessor
 
 def train():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(base_dir, "data", "vendor_quotes.csv")
+    data_path = os.path.join(base_dir, "data", "vendor_quotes_v2.csv")
     model_dir = os.path.join(base_dir, "models")
     
     if not os.path.exists(data_path):

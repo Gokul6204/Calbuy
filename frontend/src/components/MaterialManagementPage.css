@@ -254,6 +254,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    color: var(--text-primary);
     padding: 0.875rem 1.25rem;
     background: var(--surface-soft);
     border-radius: var(--radius-md);
@@ -294,6 +295,16 @@
 
 .m-name {
     color: var(--text-primary);
+}
+
+.m-id-tag {
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    margin-left: 0.5rem;
 }
 
 .delete-mini {

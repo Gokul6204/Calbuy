@@ -1,17 +1,18 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { uploadBOMFile } from '../api/bom'
 import { FaCloudUploadAlt } from 'react-icons/fa'
 import './BOMUpload.css'
 
-const ACCEPT = '.xlsx,.xls,.csv,.pdf'
+const ACCEPT = '.xlsx,.xls,.csv,.pdf,.kss'
 
-export function BOMUpload({ onSuccess }) {
+export function BOMUpload({ onSuccess, folderUploadSignal = 0 }) {
   const [files, setFiles] = useState([])
   const [uploading, setUploading] = useState(false)
   const [results, setResults] = useState([])
   const [error, setError] = useState(null)
   const [progress, setProgress] = useState({ current: 0, total: 0 })
   const inputRef = useRef(null)
+  const folderInputRef = useRef(null)
 
   const handleChange = (e) => {
     const chosen = Array.from(e.target.files || [])
@@ -20,6 +21,13 @@ export function BOMUpload({ onSuccess }) {
     setError(null)
     setProgress({ current: 0, total: 0 })
   }
+
+  // Trigger folder picker from parent "Upload Folder" button.
+  useEffect(() => {
+    if (folderUploadSignal > 0 && folderInputRef.current) {
+      folderInputRef.current.click()
+    }
+  }, [folderUploadSignal])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -72,32 +80,47 @@ export function BOMUpload({ onSuccess }) {
             aria-label="Choose BOM files"
             multiple
           />
+          <input
+            ref={folderInputRef}
+            type="file"
+            accept={ACCEPT}
+            onChange={handleChange}
+            style={{ display: 'none' }}
+            multiple
+            webkitdirectory="true"
+            directory="true"
+          />
         </div>
-        <button
-          type="submit"
-          disabled={files.length === 0 || uploading}
-          className="bom-upload-btn"
-        >
-          {uploading ? (
-            <div className="btn-upload-status">
-              <span className="spinner"></span>
-              <span className="upload-count">{progress.current}/{progress.total}</span>
-            </div>
-          ) : (
-            <>
-              <FaCloudUploadAlt /> Upload {files.length > 0 ? `${files.length} Files` : 'Files'}
-            </>
-          )}
-        </button>
-        {uploading ? (
-          <button className="bom-upload-btn">Cancel</button>
-        ) : (
-          <button className="bom-upload-btn" disabled>Cancel</button>
-        )}
+        <div className="bom-upload-btn-row">
+          <button
+            type="submit"
+            disabled={files.length === 0 || uploading}
+            className="bom-upload-btn"
+          >
+            {uploading ? (
+              <div className="btn-upload-status">
+                <span className="spinner"></span>
+                <span className="upload-count">{progress.current}/{progress.total}</span>
+              </div>
+            ) : (
+              <>
+                <FaCloudUploadAlt /> Upload {files.length > 0 ? `${files.length} Files` : 'Files'}
+              </>
+            )}
+          </button>
+          <button 
+            type="button"
+            className="bom-upload-btn secondary" 
+            onClick={() => { setFiles([]); if(inputRef.current) inputRef.current.value=''; }}
+            disabled={files.length === 0 && !uploading}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
 
       <div className="bom-upload-hint">
-        <span>Formats: XLSX, XLS, CSV, PDF. Multiple files allowed.</span>
+        <span>Formats: XLSX, XLS, CSV, PDF, KSS. Upload files or folder.</span>
       </div>
 
       {files.length > 0 && (

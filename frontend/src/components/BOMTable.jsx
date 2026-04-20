@@ -1,11 +1,9 @@
-import { useState } from 'react'
 import { FaEdit, FaTrash, FaInbox } from 'react-icons/fa'
-import { deleteBOMRecord } from '../api/bom'
 import './BOMTable.css'
 
 export function BOMTable({ data, onEdit, onDelete }) {
   const handleDelete = (row) => {
-    if (!window.confirm(`Delete "${row.material}" (${row.bom_id})?`)) return
+    if (!window.confirm(`Delete "${row.grade_name || row.material}"?`)) return
     onDelete?.(row)
   }
 
@@ -24,28 +22,26 @@ export function BOMTable({ data, onEdit, onDelete }) {
       <table className="bom-table">
         <thead>
           <tr>
-            <th>BOM ID</th>
-            <th>Part Number</th>
-            <th>Material</th>
-            <th className="bom-table-qty">Qty</th>
+            <th>Part</th>
+            <th>Size</th>
+            <th>Grade</th>
+            <th className="bom-table-qty">Quantity</th>
+            <th>Quantity Type</th>
+            <th>Unit</th>
             <th>Required Date</th>
-            <th>Source</th>
             <th style={{ textAlign: 'right' }}>Actions</th>
           </tr>
         </thead>
         <tbody>
           {data.map((row) => (
             <tr key={row.id || row.temp_id}>
-              <td><span className="font-mono">{row.bom_id}</span></td>
-              <td>{row.bom_id}</td>
-              <td className="font-semibold">{row.material}</td>
-              <td className="bom-table-qty">{formatQty(row.quantity)}</td>
+              <td>{row.formatted_part || row.part || row.part_number || '—'}</td>
+              <td>{row.size || '—'}</td>
+              <td className="font-semibold">{row.grade_name || row.material || '—'}</td>
+              <td className="bom-table-qty">{formatQty(row.quantity ?? row.length_area)}</td>
+              <td style={{ textTransform: 'capitalize' }}>{row.quantity_type || '—'}</td>
+              <td>{row.unit || '—'}</td>
               <td>{formatDate(row.date_of_requirement)}</td>
-              <td>
-                <div className="bom-table-source" title={row.source_file}>
-                  {row.source_file}
-                </div>
-              </td>
               <td>
                 <div className="bom-table-actions">
                   <button
@@ -75,7 +71,7 @@ export function BOMTable({ data, onEdit, onDelete }) {
 function formatQty(val) {
   if (val == null) return '—'
   const n = Number(val)
-  return Number.isInteger(n) ? n : Number(n).toFixed(4)
+  return Number.isInteger(n) ? n : Number(n).toFixed(2)
 }
 
 function formatDate(str) {

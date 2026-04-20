@@ -278,6 +278,20 @@
 .v-main {
     display: flex;
     flex-direction: column;
+    gap: 0.5rem;
+}
+
+.v-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+    gap: 1rem;
+}
+
+.v-name-group {
+    display: flex;
+    flex-direction: column;
     gap: 0.25rem;
 }
 
@@ -305,6 +319,30 @@
 
 
 .v-matched-mats {
+    display: none; /* Old class replaced by v-parts-list */
+}
+
+.v-category-badge {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: flex-end;
+}
+
+.cat-chip {
+    padding: 3px 12px;
+    background: var(--surface-2);
+    color: var(--text-primary);
+    border-radius: 100px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border: 1px solid var(--border-strong);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+}
+
+.v-parts-list {
     margin-top: 1.25rem;
     display: flex;
     flex-wrap: wrap;
@@ -313,8 +351,8 @@
     padding-top: 1rem;
 }
 
-.m-chip {
-    padding: 2px 10px;
+.part-chip {
+    padding: 4px 12px;
     background: var(--accent-glow);
     color: var(--accent-light);
     border-radius: 100px;
@@ -322,7 +360,28 @@
     font-weight: 600;
     border: 1px solid var(--accent-glow);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.part-chip.sent {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow: none;
+    opacity: 0.9;
+}
+
+.no-parts-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.m-chip {
+    display: none;
 }
 
 /* ── Material Multi-Select Dropdown ── */

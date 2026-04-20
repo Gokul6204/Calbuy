@@ -7,11 +7,11 @@ import { VendorUpload } from './VendorUpload'
 import { FaTools, FaPlus, FaCloudUploadAlt } from 'react-icons/fa'
 import { BsPersonFillCheck, BsPersonFillX  } from "react-icons/bs";
 import './VendorPage.css'
-
+import { useAlert } from '../context/NotificationContext'
 import { useWebSocket } from '../context/WebSocketContext'
-
 export function VendorPage() {
     const { subscribe, isConnected } = useWebSocket()
+    const { showAlert } = useAlert()
     const [vendors, setVendors] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -67,7 +67,7 @@ export function VendorPage() {
             await deleteVendor(id)
             loadVendors()
         } catch (e) {
-            alert(e.message)
+            showAlert(e.message, 'error')
         }
     }
 
@@ -79,7 +79,7 @@ export function VendorPage() {
             await updateVendor(vendor.id, { ...vendor, is_active: !vendor.is_active })
             loadVendors()
         } catch (e) {
-            alert(e.message || 'Failed to update status')
+            showAlert(e.message || 'Failed to update status', 'error')
         }
     }
 
@@ -90,7 +90,7 @@ export function VendorPage() {
                     
 
                     <div className="action-card">
-                        <div className="card-header">
+                        <div className="v-card-header">
                             <FaCloudUploadAlt />
                             <h4>Import Vendors</h4>
                         </div>
@@ -117,12 +117,8 @@ export function VendorPage() {
                             <span className="stat-value">{vendors.length}</span>
                         </div>
                         <div className="stat-card">
-                            <span className="stat-label">Active Materials</span>
-                            <span className="stat-value">--</span>
-                        </div>
-                        <div className="stat-card">
-                            <span className="stat-label">Reliability</span>
-                            <span className="stat-value">98%</span>
+                            <span className="stat-label">Active Vendors</span>
+                            <span className="stat-value">{vendors.filter(v => v.is_active).length}</span>
                         </div>
                     </div>
 

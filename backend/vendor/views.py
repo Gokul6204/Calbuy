@@ -48,7 +48,7 @@ class SendRfqEmailView(APIView):
                         if project_id:
                             try:
                                 project = Project.objects.get(pk=project_id)
-                                ProjectVendorAccess.objects.get_or_create(
+                                access, created = ProjectVendorAccess.objects.get_or_create(
                                     project=project,
                                     vendor_email=to_email,
                                     defaults={
@@ -56,27 +56,44 @@ class SendRfqEmailView(APIView):
                                         'access_password': generate_password()
                                     }
                                 )
+                                # Replace password placeholder
+                                vendor_body = vendor_body.replace("[Your Portal Password]", access.access_password)
                                 
-                                # Create/Update placeholder quotation with deadline
-                                deadline_val = rfq.get("deadline")
-                                if deadline_val:
-                                    material = rfq.get("material", "unknown")
-                                    # Use case-insensitive material matching to avoid duplicate rows
-                                    quote = Quotation.objects.filter(
-                                        project=project,
-                                        vendor_id=v_id,
-                                        material_name__iexact=material
-                                    ).first()
-                                    
-                                    if quote:
-                                        quote.submission_deadline = deadline_val
-                                        quote.save()
-                                    else:
-                                        Quotation.objects.create(
+                                # Create granular quotation rows if provided
+                                granular_items = rfq.get("granular_items", [])
+                                if granular_items:
+                                    for item in granular_items:
+                                        # Associated this item with the current vendor getting the email
+                                        
+                                        p_name = item.get("formatted_part") or item.get("part")
+                                        s_spec = item.get("size")
+                                        m_name = item.get("grade_name") or item.get("material")
+                                        
+                                        # Use exactly matched combination
+                                        Quotation.objects.update_or_create(
                                             project=project,
                                             vendor_id=v_id,
-                                            material_name=material,
-                                            submission_deadline=deadline_val
+                                            part_name=p_name,
+                                            size_spec=s_spec,
+                                            material_name=m_name,
+                                            bom_item_id=item.get("id"),
+                                            defaults={
+                                                'submission_deadline': rfq.get("deadline")
+                                            }
+                                        )
+                                else:
+                                    # Legacy / fallback to part-only Gradeing
+                                    deadline_val = rfq.get("deadline")
+                                    if deadline_val:
+                                        material = rfq.get("material", "unknown")
+                                        Quotation.objects.update_or_create(
+                                            project=project,
+                                            vendor_id=v_id,
+                                            material_name__iexact=material,
+                                            defaults={
+                                                'submission_deadline': deadline_val,
+                                                'part_name': material # Fallback part name
+                                            }
                                         )
                             except Project.DoesNotExist:
                                 pass
@@ -100,7 +117,14 @@ class VendorListCreateView(APIView):
     """List vendors (GET) or create a vendor (POST)."""
 
     def get(self, request):
-        qs = VendorDetails.objects.all()
+        if request.user.is_authenticated:
+            from django.db.models import Q
+            # Show vendors belonging to this user's company OR the default company (1)
+            company_id = request.user.id
+            qs = VendorDetails.objects.filter(Q(company_id=company_id) | Q(company_id=1))
+        else:
+            qs = VendorDetails.objects.filter(company_id=1)
+
         vendor_id = request.query_params.get("vendor_id")
         if vendor_id:
             qs = qs.filter(vendor_id__icontains=vendor_id)
@@ -115,8 +139,42 @@ class VendorListCreateView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try:
             # Determine company_id from user or default
-            company_id = getattr(request.user, 'company_id', 1)
-            vendor = serializer.save(company_id=company_id)
+            company_id = request.user.id if request.user.is_authenticated else 1
+            
+            # Geocoding and distance calculation
+            from Calbuy_procurement.geocoding import get_geocode, calculate_distance_km
+            from accounts.models import UserProfile
+            
+            lat, lon = getattr(serializer.validated_data, 'latitude', None), getattr(serializer.validated_data, 'longitude', None)
+            address_parts = [
+                serializer.validated_data.get('address', ''),
+                serializer.validated_data.get('city', ''),
+                serializer.validated_data.get('state', ''),
+                serializer.validated_data.get('country', '')
+            ]
+            
+            if any(address_parts):
+                try:
+                    lat, lon = get_geocode(*address_parts)
+                except Exception as e:
+                    pass # Silently fail geocoding, stick to none
+            
+            distance = None
+            if lat and lon:
+                user_id = request.user.id if request.user.is_authenticated else 1
+                try:
+                    profile = UserProfile.objects.get(user_id=user_id)
+                    if profile.latitude and profile.longitude:
+                        distance = calculate_distance_km(lat, lon, profile.latitude, profile.longitude)
+                except UserProfile.DoesNotExist:
+                    pass
+                    
+            vendor = serializer.save(
+                company_id=company_id,
+                latitude=lat,
+                longitude=lon,
+                distance_to_organization_km=distance
+            )
             
             # Real-time Broadcast
             broadcast_company_event(
@@ -191,14 +249,12 @@ class VendorMaterialListCreateView(APIView):
 
     def post(self, request, vendor_pk):
         vendor = get_object_or_404(VendorDetails, pk=vendor_pk)
-        material = (request.data.get("material") or "").strip()
-        part_number = (request.data.get("part_number") or "").strip()
-        if not material:
-            return Response({"error": "material is required."}, status=status.HTTP_400_BAD_REQUEST)
+        part = (request.data.get("part") or "").strip()
+        if not part:
+            return Response({"error": "part is required."}, status=status.HTTP_400_BAD_REQUEST)
         obj = VendorMaterialInfo.objects.create(
             vendor=vendor, 
-            material=material,
-            part_number=part_number
+            part=part
         )
         return Response(VendorMaterialInfoSerializer(obj).data, status=status.HTTP_201_CREATED)
 
@@ -208,12 +264,10 @@ class VendorMaterialDetailView(APIView):
 
     def put(self, request, pk):
         obj = get_object_or_404(VendorMaterialInfo, pk=pk)
-        material = (request.data.get("material") or "").strip()
-        part_number = (request.data.get("part_number") or "").strip()
-        if not material:
-            return Response({"error": "material is required."}, status=status.HTTP_400_BAD_REQUEST)
-        obj.material = material
-        obj.part_number = part_number
+        part = (request.data.get("part") or "").strip()
+        if not part:
+            return Response({"error": "part is required."}, status=status.HTTP_400_BAD_REQUEST)
+        obj.part = part
         obj.save()
         return Response(VendorMaterialInfoSerializer(obj).data)
 
@@ -224,40 +278,71 @@ class VendorMaterialDetailView(APIView):
 
 
 class MatchVendorsView(APIView):
-    """Return vendors matching a list of materials."""
+    """Return vendors matching a list of categories."""
 
     def post(self, request):
-        materials = request.data.get("materials", [])
+        categories = request.data.get("categories", [])
         location = request.data.get("location", "")
-        if not materials:
+        
+        # If no categories provided, try materials for backward compatibility
+        if not categories:
+            materials = request.data.get("materials", [])
+            if not materials:
+                return Response([])
+            # Lookup categories for these materials if they aren't provided
+            from bom.models import PartMaster
+            found_cats = PartMaster.objects.filter(part__in=materials).values_list('category', flat=True)
+            categories = list(set(found_cats))
+
+        if not categories:
             return Response([])
 
         from django.db.models import Q
         query = Q()
-        for m in materials:
-            query |= Q(material__iexact=m.strip())
-        matching_v_materials = VendorMaterialInfo.objects.filter(query)
+        for cat in categories:
+            query |= Q(category__iexact=cat.strip())
         
-        # Get unique vendors from these materials
-        v_ids = matching_v_materials.values_list("vendor_id", flat=True)
-        vendors_qs = VendorDetails.objects.filter(vendor_id__in=v_ids, is_active=True)
+        vendors_qs = VendorDetails.objects.filter(query, is_active=True)
         
         if location:
-            vendors_qs = vendors_qs.filter(location__icontains=location.strip())
+            vendors_qs = vendors_qs.filter(Q(city__icontains=location.strip()) | Q(state__icontains=location.strip()) | Q(country__icontains=location.strip()))
             
         vendors = vendors_qs.distinct()
 
-        materials_map = {}
-        for vm in matching_v_materials:
-            v_id = vm.vendor_id
-            if v_id not in materials_map:
-                materials_map[v_id] = []
-            if vm.material not in materials_map[v_id]:
-                materials_map[v_id].append(vm.material)
-
+        # Enrichment with matched categories and parts
         vendors_data = VendorDetailsSerializer(vendors, many=True).data
+        from .models import VendorMaterialInfo
+        
+        # Get all parts for these vendors at once for efficiency
+        v_ids = [v["vendor_id"] for v in vendors_data]
+        all_v_parts = VendorMaterialInfo.objects.filter(vendor_id__in=v_ids)
+        
+        # Create a mapping of vendor_id -> list of parts
+        parts_map = {}
+        for vp in all_v_parts:
+            if vp.vendor_id not in parts_map:
+                parts_map[vp.vendor_id] = []
+            parts_map[vp.vendor_id].append(vp.part)
+
+        # Get relevant parts from request if possible (bom materials/parts)
+        request_parts = request.data.get("materials", [])
+        request_parts_lower = [p.strip().lower() for p in request_parts]
+
         for v in vendors_data:
-            v["matched_materials"] = materials_map.get(v["vendor_id"], [])
+            v_id = v.get("vendor_id")
+            
+            # Matched Category - based on organization's category matching the request
+            v_cat = (v.get("category") or "").strip().lower()
+            v["matched_materials"] = [cat for cat in categories if cat.strip().lower() == v_cat]
+            
+            # Matched Parts - parts that the vendor has which were in the request
+            v_all_parts = parts_map.get(v_id, [])
+            v["matched_parts"] = [p for p in v_all_parts if p.strip().lower() in request_parts_lower]
+            
+            # If no intersection but vendor has parts, might want to show them? 
+            # For now, let's just stick to the intersection as "matched_parts"
+            # But the user also wants to list parts the vendor holds.
+            v["all_parts"] = v_all_parts
 
         return Response(vendors_data)
 
@@ -288,6 +373,8 @@ class VendorUploadView(APIView):
         created = []
         skipped = []
         
+        company_id = request.user.id if request.user.is_authenticated else 1
+        
         for row in rows:
             vendor_id = row.get("vendor_id")
             if not vendor_id: continue
@@ -298,10 +385,11 @@ class VendorUploadView(APIView):
                 obj, is_new = VendorDetails.objects.update_or_create(
                 vendor_id=vendor_id,
                 defaults={
+                    "company_id": company_id,
                     "vendor_name": row.get("vendor_name", "unknown"),
                     "mobile_number": row.get("mobile_number", "unknown"),
                     "email": row.get("email", "unknown"),
-                    "location": row.get("location", "unknown"),
+                    "city": row.get("city", row.get("location", "unknown")), # Mapping location to city if city not present
                     "address": row.get("address", "unknown"),
                 }
             )

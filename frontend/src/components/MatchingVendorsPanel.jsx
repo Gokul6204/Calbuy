@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { FaSearch, FaTimes, FaMapMarkerAlt, FaPaperPlane, FaChevronDown, FaBoxOpen } from 'react-icons/fa'
+import { FaSearch, FaTimes, FaMapMarkerAlt, FaPaperPlane, FaChevronDown, FaBoxOpen, FaCheckCircle } from 'react-icons/fa'
+import { useAlert } from '../context/NotificationContext'
 import './MatchingVendorsPanel.css'
 
-export function MatchingVendorsPanel({ vendors, onClose, isPageView = false, onSendMail }) {
+export function MatchingVendorsPanel({ vendors, bomList = [], quotations = [], onClose, isPageView = false, onSendMail }) {
+    const { showAlert } = useAlert()
     const [locationFilter, setLocationFilter] = useState('')
     const [selectedMaterials, setSelectedMaterials] = useState([])
     const [matDropdownOpen, setMatDropdownOpen] = useState(false)
@@ -12,12 +14,33 @@ export function MatchingVendorsPanel({ vendors, onClose, isPageView = false, onS
 
     if (!vendors && !isPageView) return null
 
-    const uniqueMaterials = Array.from(new Set(vendors?.flatMap(v => v.matched_materials || []) || []))
+    // Helper to check if a specific part has already been requested from a specific vendor
+    const isAlreadyRequested = (vId, partName) => {
+        return quotations.some(q => 
+            q.vendor_id === vId && 
+            (q.part_name || '').toLowerCase().trim() === (partName || '').toLowerCase().trim()
+        )
+    }
+
+    // Determine unique materials based on what vendors hold
+    const uniqueMaterials = Array.from(new Set(vendors?.flatMap(v => v.all_parts || []) || []))
+    
+    // Also include material names from BOM to ensure user can select them
+    const uniqueBomParts = Array.from(new Set(bomList.map(item => (item.formatted_part || item.part_name || item.part || 'Other').trim())))
+    const dropdownMaterials = Array.from(new Set([...uniqueMaterials, ...uniqueBomParts])).sort()
 
     const filteredVendors = vendors?.filter(v => {
-        const matchesLoc = (v.location || '').toLowerCase().includes(locationFilter.toLowerCase())
-        const matchesMat = selectedMaterials.length === 0 || selectedMaterials.some(m => (v.matched_materials || []).includes(m))
-        return matchesLoc && matchesMat
+        const fullLocation = `${v.city} ${v.state} ${v.country} ${v.location || ''}`.toLowerCase()
+        const matchesLoc = fullLocation.includes(locationFilter.toLowerCase())
+        
+        // Material Filter logic - check if vendor holds any of the selected materials
+        if (selectedMaterials.length > 0) {
+            const vendorParts = (v.all_parts || []).map(p => p.toLowerCase().trim())
+            const matchesMat = selectedMaterials.some(m => vendorParts.includes(m.toLowerCase().trim()))
+            if (!matchesMat) return false
+        }
+        
+        return matchesLoc
     }) || []
 
     const toggleMaterial = (m) => {
@@ -37,10 +60,54 @@ export function MatchingVendorsPanel({ vendors, onClose, isPageView = false, onS
 
     const handleSendMail = () => {
         if (!onSendMail) return
-        let toSend = filteredVendors
-        if (isSelectionMode && selectedVendorIds.size > 0) {
-            toSend = filteredVendors.filter(v => selectedVendorIds.has(v.id))
+        
+        const baseVendors = isSelectionMode && selectedVendorIds.size > 0 
+            ? filteredVendors.filter(v => selectedVendorIds.has(v.id))
+            : filteredVendors
+
+        // Map vendors to their matching BOM part names, EXCLUDING already requested ones
+        const toSend = baseVendors.map(v => {
+            const vendorInv = (v.all_parts || []).map(p => p.toLowerCase().trim())
+            
+            // Intersection: Find BOM items where the part name matches vendor inventory
+            let heldBomParts = uniqueBomParts.filter(bp => {
+                const bpLower = bp.toLowerCase()
+                return vendorInv.some(vPart => {
+                    if (!vPart) return false
+                    const escaped = vPart.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    const regex = new RegExp(`\\b${escaped}\\b`, 'i')
+                    return regex.test(bpLower) || vPart.toLowerCase() === bpLower
+                })
+            })
+
+            // Filter out parts already sent to this vendor
+            heldBomParts = heldBomParts.filter(p => !isAlreadyRequested(v.vendor_id, p))
+
+            // If user has a specific filter active ("Select Material"), further restrict to those
+            if (selectedMaterials.length > 0) {
+                const selectedLower = selectedMaterials.map(m => m.toLowerCase().trim())
+                heldBomParts = heldBomParts.filter(p => {
+                    const pLower = p.toLowerCase().trim()
+                    return selectedLower.some(sm => pLower.includes(sm) || sm.includes(pLower))
+                })
+            }
+
+            return {
+                ...v,
+                intended_parts: heldBomParts
+            }
+        }).filter(v => v.intended_parts && v.intended_parts.length > 0)
+
+        if (toSend.length === 0) {
+            const hasExisting = baseVendors.some(v => uniqueBomParts.some(p => isAlreadyRequested(v.vendor_id, p)))
+            if (hasExisting) {
+                showAlert("RFQs have already been sent to these vendors for all matching parts. No new items found to request.", "info")
+            } else {
+                showAlert("None of the selected vendors match the specific parts required for this project/selection.", "info")
+            }
+            return
         }
+
         onSendMail(toSend)
     }
 
@@ -101,7 +168,7 @@ export function MatchingVendorsPanel({ vendors, onClose, isPageView = false, onS
                     )}
 
                     {/* Custom Material Multi-Select Dropdown */}
-                    {uniqueMaterials.length > 0 && (
+                    {dropdownMaterials.length > 0 && (
                         <div className="mat-dropdown-wrap" ref={dropdownRef}>
                             <button
                                 className={`mat-dropdown-trigger ${selectedMaterials.length > 0 ? 'has-selection' : ''}`}
@@ -120,7 +187,7 @@ export function MatchingVendorsPanel({ vendors, onClose, isPageView = false, onS
                             {matDropdownOpen && (
                                 <div className="mat-dropdown-menu">
                                     <div className="mat-dropdown-list">
-                                        {uniqueMaterials.map(m => (
+                                        {dropdownMaterials.map(m => (
                                             <label key={m} className={`mat-option ${selectedMaterials.includes(m) ? 'checked' : ''}`}>
                                                 <input
                                                     type="checkbox"
@@ -174,13 +241,16 @@ export function MatchingVendorsPanel({ vendors, onClose, isPageView = false, onS
             <div className="panel-content">
                 {!vendors || vendors.length === 0 ? (
                     <div className="empty-results">
-                        <div className="empty-icon">🏭</div>
-                        <p>No vendors found matching the materials in this BOM.</p>
-                        <p className="hint">Try mapping materials to vendors in the "Material" tab.</p>
+                        <FaBoxOpen size={64} style={{ color: 'var(--accent)', opacity: 0.5, marginBottom: '1.5rem' }} />
+                        <h3>No Matching Vendors</h3>
+                        <p>We couldn't find any suppliers that provide the materials in your BOM list.</p>
+                        <p className="hint">Try mapping materials to vendors manually in the <strong>Materials</strong> tab to improve matching.</p>
                         {isPageView && (
-                            <button className="btn btn-primary mt-4" onClick={() => onClose()}>
-                                Go to BOM
-                            </button>
+                            <div className="empty-actions" style={{ marginTop: '2rem' }}>
+                                <button className="btn btn-primary" onClick={() => onClose()}>
+                                    Back to BOM Table
+                                </button>
+                            </div>
                         )}
                     </div>
                 ) : filteredVendors.length === 0 ? (
@@ -211,19 +281,42 @@ export function MatchingVendorsPanel({ vendors, onClose, isPageView = false, onS
                                     </div>
                                 )}
                                 <div className="v-main">
-                                    <span className="v-name">{v.vendor_name}</span>
-                                    <span className="v-id">{v.vendor_id}</span>
+                                    <div className="v-title-row">
+                                        <div className="v-name-group">
+                                            <span className="v-name">{v.vendor_name}</span>
+                                            <span className="v-id">{v.vendor_id}</span>
+                                        </div>
+                                        {v.matched_materials && v.matched_materials.length > 0 && (
+                                            <div className="v-category-badge">
+                                                {v.matched_materials.map((m, idx) => (
+                                                    <span key={idx} className="cat-chip">{m}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="v-details">
-                                    <span>{v.location || 'Unknown Location'}</span>
+                                    <span>{(v.city || v.location) + ", " + v.state + ", " + v.country || 'Unknown Location'}</span>
                                 </div>
-                                {v.matched_materials && v.matched_materials.length > 0 && (
-                                    <div className="v-matched-mats">
-                                        {v.matched_materials.map((m, idx) => (
-                                            <span key={idx} className="m-chip">{m}</span>
-                                        ))}
-                                    </div>
-                                )}
+                                <div className="v-parts-list">
+                                    {v.all_parts && v.all_parts.length > 0 ? (
+                                        v.all_parts.map((p, idx) => {
+                                            const requested = isAlreadyRequested(v.vendor_id, p)
+                                            return (
+                                                <span 
+                                                    key={idx} 
+                                                    className={`part-chip ${requested ? 'sent' : ''}`}
+                                                    title={requested ? 'RFQ already sent' : 'Not yet requested'}
+                                                >
+                                                    {p}
+                                                    {requested && <FaCheckCircle style={{ marginLeft: '4px', fontSize: '0.7em' }} />}
+                                                </span>
+                                            )
+                                        })
+                                    ) : (
+                                        <span className="no-parts-hint">No parts listed</span>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>

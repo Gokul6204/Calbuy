@@ -22,9 +22,9 @@ async function handleResponse(res) {
 
 export async function rankVendors(projectId, bomItemId, weights = {}) {
     let url = `${API_BASE}/rank/?project_id=${projectId}&bom_item_id=${bomItemId}`
-    if (weights.price) url += `&price_weight=${weights.price}`
-    if (weights.leadTime) url += `&lead_time_weight=${weights.leadTime}`
-    if (weights.quantity) url += `&quantity_weight=${weights.quantity}`
+    if (weights.price_weight) url += `&price_weight=${weights.price_weight}`
+    if (weights.lead_time_weight) url += `&lead_time_weight=${weights.lead_time_weight}`
+    if (weights.distance_weight) url += `&distance_weight=${weights.distance_weight}`
     
     const res = await fetch(url)
     return handleResponse(res)

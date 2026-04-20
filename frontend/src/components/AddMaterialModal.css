@@ -17,7 +17,8 @@
 .add-material-modal {
   background: #ffffff;
   width: 100%;
-  max-width: 550px; /* Slightly wider for vendor grid */
+  max-width: 550px;
+  /* Slightly wider for vendor grid */
   border-radius: 12px;
   box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
   display: flex;
@@ -28,8 +29,15 @@
 }
 
 @keyframes modalEnter {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .add-material-header {
@@ -78,16 +86,38 @@
   font-weight: 500;
 }
 
+.mapped-info-banner {
+  background: var(--bg-accent-light, #f0f4ff);
+  border: 1px solid var(--border-accent, #c7d2fe);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #3730a3;
+}
+
+.mapped-info-banner .info-sep {
+  opacity: 0.3;
+}
+
 .input-group {
   margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .input-group label {
   display: block;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
+  text-align: left;
 }
 
 .required-star {
@@ -105,6 +135,21 @@
   transition: all 0.2s;
   background: #ffffff;
   color: #1e293b;
+}
+
+.input-group input[type="date"] {
+  position: relative;
+  font-family: inherit;
+}
+
+.input-group input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  filter: invert(0.2);
+}
+
+.input-group input[type="date"]:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
 }
 
 .input-group input:focus,
@@ -195,9 +240,11 @@
 .add-material-form::-webkit-scrollbar {
   width: 6px;
 }
+
 .add-material-form::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .add-material-form::-webkit-scrollbar-thumb {
   background: #e2e8f0;
   border-radius: 10px;

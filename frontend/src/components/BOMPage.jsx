@@ -4,8 +4,7 @@ import { BOMTable } from './BOMTable'
 import { AddMaterialModal } from './AddMaterialModal'
 import { bulkCreateBOM } from '../api/bom'
 import { matchVendors } from '../api/vendor'
-import { FaPlus, FaSearch, FaCloudUploadAlt, FaTools, FaRegSave, FaTrash, FaArrowLeft } from 'react-icons/fa'
-import { UnderConstruction } from './UnderConstruction'
+import { FaPlus, FaSearch, FaCloudUploadAlt, FaTools, FaTrash } from 'react-icons/fa'
 import './HomePage.css'
 
 /** Derive next BOM ID from existing list (e.g. BOM-001, BOM-002 -> BOM-003). */
@@ -26,7 +25,7 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
     const [savingToDB, setSavingToDB] = useState(false)
     const [error, setError] = useState(null)
     const [successMessage, setSuccessMessage] = useState(null)
-    const [viewMode, setViewMode] = useState('list') // 'list' or 'construction'
+    const [folderUploadTrigger, setFolderUploadTrigger] = useState(0)
 
     const handleUploadSuccess = async (newRows) => {
         const updatedList = [...newRows, ...bomList]
@@ -124,8 +123,8 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
         if (!bomList.length) return
         setFindingVendors(true)
         try {
-            const materials = [...new Set(bomList.map(item => item.material.trim()))]
-            const result = await matchVendors(materials)
+            const categories = [...new Set(bomList.map(item => (item.category || '').trim()))].filter(Boolean)
+            const result = await matchVendors({ categories })
             setMatchedVendors(result)
             setView('matching-vendor')
         } catch (e) {
@@ -139,18 +138,27 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
         <div className="view-container">
             <div className="home-grid">
                 <aside className="home-sidebar">
-                    <div className="action-card">
+                    {/* <div className="action-card">
                         <h3><FaCloudUploadAlt /> Extract Bom from Pdf's</h3>
-                        <button
-                            className={`btn ${viewMode === 'construction' ? 'btn-secondary' : 'btn-primary'}`}
-                            onClick={() => setViewMode(viewMode === 'construction' ? 'list' : 'construction')}
-                        >
-                            {viewMode === 'construction' ? <><FaArrowLeft /> Back To Bom Table</> : <><FaCloudUploadAlt /> Upload Folder</>}
-                        </button>
-                    </div>
+                        
+                    </div> */}
                     <div className="action-card">
-                        <h3><FaCloudUploadAlt /> Import BOM</h3>
-                        <BOMUpload onSuccess={handleUploadSuccess} />
+                        <div className="v-card-header">
+                            <FaCloudUploadAlt />
+                            <h4>Import BOM</h4>
+                        </div>
+                        <div className="import-section">
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setFolderUploadTrigger((v) => v + 1)}
+                            >
+                                <FaCloudUploadAlt /> Upload Folder
+                            </button>
+                            <div className="or-divider">
+                                <span>OR</span>
+                            </div>
+                            <BOMUpload onSuccess={handleUploadSuccess} folderUploadSignal={folderUploadTrigger} />
+                        </div>
                     </div>
 
                     <div className="action-card">
@@ -196,29 +204,20 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
                 </aside>
 
                 <main className="home-main-content">
-                    {viewMode === 'list' ? (
-                        <>
-                            <div className="table-container-header">
-                                <h2>BOM Records</h2>
-                                <span className="v-badge">{bomList.length} total items</span>
-                            </div>
+                    <>
+                        <div className="table-container-header">
+                            <h2>BOM Records</h2>
+                            <span className="v-badge">{bomList.length} total items</span>
+                        </div>
 
-                            <div className="table-view-inner">
-                                <BOMTable
-                                    data={bomList}
-                                    onEdit={(row) => setEditingRecord(row)}
-                                    onDelete={handleDelete}
-                                />
-                            </div>
-                        </>
-                    ) : (
-                        <div className="construction-inner-view">
-                            <UnderConstruction
-                                title="AI BOM Extraction (Folders)"
-                                description="We are training our AI models to automatically extract BOM items from technical drawings and multi-page PDFs within folders. This feature will be available soon."
+                        <div className="table-view-inner">
+                            <BOMTable
+                                data={bomList}
+                                onEdit={(row) => setEditingRecord(row)}
+                                onDelete={handleDelete}
                             />
                         </div>
-                    )}
+                    </>
                 </main>
             </div>
 

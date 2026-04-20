@@ -2,24 +2,21 @@ import { useState, useEffect } from 'react'
 import { FaEnvelopeOpenText, FaPaperPlane, FaUserEdit, FaTrash } from 'react-icons/fa'
 import { VscLoading } from "react-icons/vsc";
 import { sendRfqs } from '../api/vendor'
+import { useAlert } from '../context/NotificationContext'
 import './RFQPage.css'
 
-export function RFQPage({ project, vendors = [], setView }) {
+export function RFQPage({ project, vendors = [], bomList = [], quotations = [], setView }) {
+    const { showAlert } = useAlert()
     const [rfqs, setRfqs] = useState([])
     const [isSending, setIsSending] = useState(false)
 
     const calculateDefaultDeadline = () => {
         const date = new Date()
         date.setDate(date.getDate() + 14) // 2 weeks from now
-        
-        const day = date.getDay() // 0 = Sunday, 6 = Saturday
-        if (day === 6) { // Saturday -> Friday
-            date.setDate(date.getDate() - 1)
-        } else if (day === 0) { // Sunday -> Monday
-            date.setDate(date.getDate() + 1)
-        }
-        
-        return date.toISOString().split('T')[0] // YYYY-MM-DD
+        const day = date.getDay()
+        if (day === 6) date.setDate(date.getDate() - 1)
+        else if (day === 0) date.setDate(date.getDate() + 1)
+        return date.toISOString().split('T')[0]
     }
 
     const formatDate = (dateStr) => {
@@ -28,75 +25,120 @@ export function RFQPage({ project, vendors = [], setView }) {
         return `${day}-${month}-${year}`
     }
 
+    const generateSpecsList = (items) => {
+        const itemsByPart = {}
+        items.forEach(item => {
+            const partKey = (item.formatted_part || item.part_name || item.part || 'Other').trim()
+            if (!itemsByPart[partKey]) itemsByPart[partKey] = []
+            itemsByPart[partKey].push(item)
+        })
+
+        return Object.entries(itemsByPart).map(([partName, partItems]) => {
+            const bullets = partItems.map(item => {
+                const qtyStr = `${Number(item.quantity).toFixed(2)} ${item.unit || 'nos'}`
+                const dateStr = item.date_of_requirement ? formatDate(item.date_of_requirement) : 'ASAP'
+                return `    • Size: ${item.size} | Grade: ${item.grade_name || item.material} | Qty: ${qtyStr} | Required: ${dateStr}`
+            }).join('\n')
+            return `[ ${partName} ]\n${bullets}`
+        }).join('\n\n')
+    }
+
     useEffect(() => {
-        if (vendors && vendors.length > 0) {
+        if (vendors && vendors.length > 0 && bomList.length > 0) {
             const defaultDeadline = calculateDefaultDeadline()
             const formattedDeadline = formatDate(defaultDeadline)
 
-            // Group by material: one RFQ per material, with all matching vendors listed
-            const materialMap = {}
-            vendors.forEach(v => {
-                const materials = v.matched_materials || []
-                materials.forEach(mat => {
-                    if (!materialMap[mat]) {
-                        materialMap[mat] = []
+            // 1. Map BOM items to each Vendor based on matching parts
+            const vendorPackages = vendors.map(v => {
+                const vendorIntendedParts = (v.intended_parts || []).map(p => p.toLowerCase().trim())
+                
+                const matchedItems = bomList.filter(item => {
+                    const partName = (item.formatted_part || item.part_name || item.part || 'Other').trim().toLowerCase()
+                    return vendorIntendedParts.includes(partName)
+                })
+
+                const itemsByCat = {}
+                matchedItems.forEach(item => {
+                    const cat = (item.category || 'Uncategorized').trim().toUpperCase()
+                    if (!itemsByCat[cat]) itemsByCat[cat] = []
+                    itemsByCat[cat].push(item)
+                })
+
+                return { vendor: v, itemsByCat, allItems: matchedItems }
+            })
+
+            // 2. Group these packages into ONE RFQ PER CATEGORY (Strictly)
+            const categoryGroups = {}
+            vendorPackages.forEach(pkg => {
+                Object.entries(pkg.itemsByCat).forEach(([catName, items]) => {
+                    if (!categoryGroups[catName]) {
+                        categoryGroups[catName] = {
+                            category: catName,
+                            vendors: [],
+                            allItems: []
+                        }
                     }
-                    materialMap[mat].push({
-                        id: v.id,
-                        vendor_id: v.vendor_id,
-                        vendor_name: v.vendor_name,
-                        location: v.location || 'Unknown',
-                    })
+                    categoryGroups[catName].vendors.push(pkg.vendor)
+                    // Track which items THIS vendor provides in this category
+                    pkg.vendor.category_items = pkg.vendor.category_items || {}
+                    pkg.vendor.category_items[catName] = items
                 })
             })
 
-            const initialRfqs = Object.entries(materialMap).map(([material, vendorList], idx) => ({
-                id: `rfq-${idx}`,
-                material,
-                vendors: vendorList,
-                subject: `Request for Quotation: ${material}`,
-                deadline: defaultDeadline, 
-                body: `Dear Sir/Madam,
+            const initialRfqs = Object.entries(categoryGroups).map(([catName, group], idx) => {
+                // For the UI template body, we show the full list of category parts from the BOM
+                const fullCatItems = bomList.filter(i => (i.category || 'Uncategorized').trim().toUpperCase() === catName)
 
-We are interested in procuring the following material/component from you:
-- ${material}
+                return {
+                    id: `rfq-${idx}`,
+                    category: catName,
+                    vendors: group.vendors,
+                    subject: `Request for Quotation - ${catName}`,
+                    deadline: defaultDeadline,
+                    body: `Dear Sir/Madam,
 
-Please provide us with your best quote and estimated lead time for this item.
+We are interested in procuring the following items within the ${catName} category for our project.
+
+[ITEM_SPECS_LIST]
+
+PROJECT REQUIREMENT:
+${project?.description || 'Standard industry specifications apply.'}
 
 VENDORS PORTAL ACCESS:
-You can also submit and manage your quotation online through our secure portal:
+You can manage and submit your quotes directly on our procurement portal:
 Portal Link: http://localhost:5173/portal/${project?.id || 'PROJECT_ID'}
+
+CREDENTIALS:
 Login Email: [Your Registered Email]
-Project Password: ${project?.project_password || '[Auto-Generated-On-Creation]'}
+Access Password: ${project?.project_password || 'N/A'}
 
 Submission Deadline: ${formattedDeadline}
 
+Please provide your best commercial quote and lead time.
+
 Best regards,
 Procurement Team`,
-            }))
+                    bom_category_items: fullCatItems
+                }
+            })
+
             setRfqs(initialRfqs)
         } else {
             setRfqs([])
         }
-    }, [vendors, project])
+    }, [vendors, project, bomList])
 
     const handleUpdateRfq = (id, field, value) => {
         setRfqs(prev => prev.map(r => {
             if (r.id === id) {
                 let updatedRfq = { ...r, [field]: value }
-                
-                // If deadline is updated, also try to update it in the body template
                 if (field === 'deadline') {
                     const oldFormatted = formatDate(r.deadline)
                     const newFormatted = formatDate(value)
                     if (r.body.includes(`Submission Deadline: ${oldFormatted}`)) {
-                        updatedRfq.body = r.body.replace(
-                            `Submission Deadline: ${oldFormatted}`, 
-                            `Submission Deadline: ${newFormatted}`
-                        )
+                        updatedRfq.body = r.body.replace(`Submission Deadline: ${oldFormatted}`, `Submission Deadline: ${newFormatted}`)
                     }
                 }
-                
                 return updatedRfq
             }
             return r
@@ -107,29 +149,59 @@ Procurement Team`,
         setRfqs(prev => prev.filter(r => r.id !== id))
     }
 
+    const prepareVendorSpecificRfqs = (baseRfqs) => {
+        const finalRfqs = []
+        baseRfqs.forEach(rfq => {
+            rfq.vendors.forEach(vendor => {
+                // Get strictly the items this vendor holds for this category
+                const vendorItems = vendor.category_items?.[rfq.category] || []
+                if (vendorItems.length === 0) return
+
+                const vendorSpecs = generateSpecsList(vendorItems)
+                let vendorBody = rfq.body.replace('[ITEM_SPECS_LIST]', vendorSpecs)
+                
+                // Dynamically inject the correct vendor email if the placeholder still exists
+                if (vendor.vendor_email) {
+                    vendorBody = vendorBody.replace('[Your Registered Email]', vendor.vendor_email)
+                }
+
+                finalRfqs.push({
+                    ...rfq,
+                    vendors: [vendor],
+                    body: vendorBody,
+                    granular_items: vendorItems
+                })
+            })
+        })
+        return finalRfqs
+    }
+
+    const handleSendSingle = async (rfq) => {
+        if (isSending) return;
+        setIsSending(true)
+        try {
+            const vendorSpecific = prepareVendorSpecificRfqs([rfq])
+            await sendRfqs(vendorSpecific, project?.id)
+            showAlert(`RFQ for ${rfq.category} sent successfully to ${rfq.vendors.length} vendors!`, 'success')
+            handleRemoveRfq(rfq.id)
+            if (rfqs.length === 1) setView('quotation')
+        } catch (error) {
+            showAlert(error.message || 'Error sending RFQ.', 'error')
+        } finally {
+            setIsSending(false)
+        }
+    }
+
     const handleSendAll = async () => {
         if (isSending) return;
         setIsSending(true)
         try {
-            // First: Generate portal access credentials
-            const vendorList = []
-            rfqs.forEach(rfq => {
-               rfq.vendors.forEach(v => {
-                  if(!vendorList.find(x => x.vendor_id === v.vendor_id)){
-                    vendorList.push({ vendor_id: v.vendor_id, email: v.email || `${v.vendor_id.toLowerCase()}@example.com` })
-                  }
-               })
-            })
-
-            // Call backend to ensure access records exist and get credentials
-            console.log("Generating portal access for:", vendorList)
-
-            const data = await sendRfqs(rfqs, project?.id)
-            alert(data?.message || 'RFQs sent successfully with portal access credentials!')
+            const vendorSpecific = prepareVendorSpecificRfqs(rfqs)
+            await sendRfqs(vendorSpecific, project?.id)
+            showAlert('All RFQs sent successfully with vendor-specific parts!', 'success')
             setView('quotation')
         } catch (error) {
-            console.error('Error sending RFQs:', error)
-            alert(error.message || 'An error occurred while sending RFQs.')
+            showAlert(error.message || 'An error occurred while sending RFQs.', 'error')
         } finally {
             setIsSending(false)
         }
@@ -142,7 +214,7 @@ Procurement Team`,
                     <div className="rfq-icon"><FaEnvelopeOpenText /></div>
                     <div className="rfq-title">
                         <h2>Request for Quotation</h2>
-                        <p>Generate and send RFQs to selected vendors</p>
+                        <p>Generate one template per category</p>
                     </div>
                 </div>
             </header>
@@ -150,9 +222,18 @@ Procurement Team`,
             <div className="rfq-content">
                 {rfqs.length === 0 ? (
                     <div className="empty-state">
-                        <div className="empty-icon">✉️</div>
-                        <h3>No Vendors Selected</h3>
-                        <p>Go to the "Matching Vendor" tab and click "Send Mail" to start creating RFQs.</p>
+                        <div className="empty-icon">{quotations.length > 0 ? '✅' : '✉️'}</div>
+                        {quotations.length > 0 ? (
+                            <>
+                                <h3>RFQs Already Sent</h3>
+                                <p>Already sent the mail to the matched vendors for this project.</p>
+                            </>
+                        ) : (
+                            <>
+                                <h3>No Vendors Selected</h3>
+                                <p>Go to "Matching Vendor" and select vendors to start generating category templates.</p>
+                            </>
+                        )}
                         <button className="btn btn-secondary mt-4" onClick={() => setView('matching-vendor')}>
                             Go to Matching Vendors
                         </button>
@@ -163,18 +244,24 @@ Procurement Team`,
                             <div key={r.id} className="rfq-card">
                                 <div className="rfq-card-header">
                                     <div className="vendor-info">
-                                        <span className="vendor-badge rfq-mat-badge">{r.material}</span>
-                                        <h4>{r.vendors.length} Vendor{r.vendors.length > 1 ? 's' : ''}</h4>
+                                        <span className="vendor-badge rfq-mat-badge">{r.category}</span>
+                                        <h4>{r.vendors.length} Vendor{r.vendors.length > 1 ? 's' : ''} in this group</h4>
+                                        <div className="v-names-list">
+                                            {r.vendors.map(v => v.vendor_name).join(', ')}
+                                        </div>
                                     </div>
                                     <div className="rfq-card-header-actions">
                                         <div className="rfq-deadline-picker">
                                             <label>Deadline:</label>
-                                            <input 
+                                            <input
                                                 type="date"
                                                 value={r.deadline}
                                                 onChange={(e) => handleUpdateRfq(r.id, 'deadline', e.target.value)}
                                             />
                                         </div>
+                                        <button className="btn-send-single" onClick={() => handleSendSingle(r)} disabled={isSending}>
+                                            <FaPaperPlane /> Send Category
+                                        </button>
                                         <button className="btn-icon-danger" onClick={() => handleRemoveRfq(r.id)}>
                                             <FaTrash />
                                         </button>
@@ -182,24 +269,37 @@ Procurement Team`,
                                 </div>
 
                                 <div className="rfq-card-body">
-                                    <div className="input-group">
-                                        <label>Subject</label>
+                                    <div className="input-grade">
+                                        <label>Email Subject</label>
                                         <input
                                             type="text"
                                             value={r.subject}
                                             onChange={(e) => handleUpdateRfq(r.id, 'subject', e.target.value)}
                                         />
                                     </div>
-                                    <div className="input-group">
+                                    <div className="input-group-custom">
                                         <div className="label-row">
-                                            <label>Message Template</label>
-                                            <span className="edit-hint"><FaUserEdit /> Editable</span>
+                                            <label>Category Template Body</label>
+                                            <span className="edit-hint">Uses [ITEM_SPECS_LIST] placeholder</span>
                                         </div>
                                         <textarea
-                                            rows={10}
+                                            rows={12}
                                             value={r.body}
                                             onChange={(e) => handleUpdateRfq(r.id, 'body', e.target.value)}
+                                            className="rfq-textarea"
                                         />
+                                    </div>
+                                    
+                                    <div className="included-items-summary">
+                                        <h5>BOM Items in this Category ({r.bom_category_items.length}):</h5>
+                                        <div className="items-pills">
+                                            {r.bom_category_items.map(item => (
+                                                <span key={item.id} className="item-pill">
+                                                    {(item.formatted_part || item.part_name || item.part)} - {item.size}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <p className="hint mt-2" style={{fontSize: '0.75rem'}}>Each vendor will only receive the items from this list that they provide.</p>
                                     </div>
                                 </div>
                             </div>
@@ -212,9 +312,9 @@ Procurement Team`,
                 <div className="rfq-page-footer">
                     <button className="btn btn-primary btn-lg" onClick={handleSendAll} disabled={isSending}>
                         {isSending ? (
-                            <><VscLoading className="spinner-icon" /> Sending...</>
+                            <><VscLoading className="spinner-icon" /> Sending RFQs...</>
                         ) : (
-                            <><FaPaperPlane /> Send All RFQs</>
+                            <><FaPaperPlane /> Send All Category Templates</>
                         )}
                     </button>
                 </div>

@@ -6,7 +6,7 @@ source: community
 date_added: "2026-02-27"
 ---
 
-# Frontend Design (Distinctive, Production-Grade)
+# Frontend Design (Distinctive, Production-Group)
 
 You are a **frontend designer-engineer**, not a layout generator.
 

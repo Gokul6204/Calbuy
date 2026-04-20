@@ -1,14 +1,21 @@
 import { useState } from 'react';
-import './LoginPage.css'; // Reusing common auth styles
+import { useAuth } from '../context/AuthContext';
+import { ensureCsrfCookie } from '../api/http';
+import './LoginPage.css';
 
 export function RegisterPage({ onRegisterSuccess, onGoToLogin }) {
+    const { login } = useAuth();
     const [formData, setFormData] = useState({
         organization_name: '',
-        organization_location: '',
         email: '',
         phone_number: '',
+        address: '',
+        country: '',
+        city: '',
+        state: '',
         password: ''
     });
+
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -21,16 +28,26 @@ export function RegisterPage({ onRegisterSuccess, onGoToLogin }) {
         setError('');
         setLoading(true);
 
+        const payload = {
+            ...formData,
+            email: formData.email.trim().toLowerCase(),
+        };
+
         try {
+            await ensureCsrfCookie();
             const response = await fetch('/api/accounts/register/', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
 
             if (response.ok) {
+                if (data.user) {
+                    login(data.user);
+                }
                 onRegisterSuccess();
             } else {
                 setError(data.error || 'Registration failed');
@@ -44,68 +61,120 @@ export function RegisterPage({ onRegisterSuccess, onGoToLogin }) {
 
     return (
         <div className="auth-container">
-            <div className="auth-card">
+            <div className="auth-card auth-card--wide">
                 <div className="auth-header">
                     <h2>Create Account</h2>
                     <p>Join Calbuy to streamline your procurement</p>
                 </div>
-                
+
                 {error && <div className="auth-error">{error}</div>}
-                
+
                 <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-group">
+
+                    {/* Row 1: Organization Name — full width */}
+                    <div className="form-Grade">
                         <label htmlFor="organization_name">Organization Name</label>
                         <input
                             id="organization_name"
                             name="organization_name"
                             type="text"
-                            placeholder="Acme Corp"
+                            placeholder="Caldim Engineering Pvt Ltd"
                             value={formData.organization_name}
                             onChange={handleChange}
                             required
                         />
                     </div>
-                    
-                    <div className="form-group">
-                        <label htmlFor="organization_location">Organization Location</label>
-                        <input
-                            id="organization_location"
-                            name="organization_location"
-                            type="text"
-                            placeholder="New York, USA"
-                            value={formData.organization_location}
-                            onChange={handleChange}
-                            required
-                        />
+
+                    {/* Row 2: Login Email + Phone */}
+                    <div className="form-row">
+                        <div className="form-Grade half-width">
+                            <label htmlFor="email">Organization Email</label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="Caldim@engg.com"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="form-Grade half-width">
+                            <label htmlFor="phone_number">Phone Number</label>
+                            <input
+                                id="phone_number"
+                                name="phone_number"
+                                type="tel"
+                                placeholder="+91 00000-00000"
+                                value={formData.phone_number}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
                     </div>
-                    
-                    <div className="form-group">
-                        <label htmlFor="email">Email Address</label>
-                        <input
-                            id="email"
-                            name="email"
-                            type="email"
-                            placeholder="admin@acme.com"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                        />
+
+                    {/* Row 3: Address + Country */}
+                    <div className="form-row">
+                        <div className="form-Grade half-width">
+                            <label htmlFor="address">Address</label>
+                            <input
+                                id="address"
+                                name="address"
+                                type="text"
+                                placeholder="Appartment No., Street Name, Area Name"
+                                value={formData.address}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+
                     </div>
-                    
-                    <div className="form-group">
-                        <label htmlFor="phone_number">Phone Number</label>
-                        <input
-                            id="phone_number"
-                            name="phone_number"
-                            type="tel"
-                            placeholder="+1 (555) 000-0000"
-                            value={formData.phone_number}
-                            onChange={handleChange}
-                            required
-                        />
+
+                    {/* Row 4: City + State */}
+                    <div className="form-row">
+                        <div className="form-Grade half-width">
+                            <label htmlFor="city">City</label>
+                            <input
+                                id="city"
+                                name="city"
+                                type="text"
+                                placeholder="City/Town"
+                                value={formData.city}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-Grade half-width">
+                            <label htmlFor="state">State</label>
+                            <input
+                                id="state"
+                                name="state"
+                                type="text"
+                                placeholder="State"
+                                value={formData.state}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-Grade half-width">
+                            <label htmlFor="country">Country</label>
+                            <input
+                                id="country"
+                                name="country"
+                                type="text"
+                                placeholder="Country"
+                                value={formData.country}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+
                     </div>
-                    
-                    <div className="form-group">
+
+                    {/* Row 5: Password — full width */}
+                    <div className="form-Grade">
                         <label htmlFor="password">Password</label>
                         <input
                             id="password"
@@ -117,12 +186,12 @@ export function RegisterPage({ onRegisterSuccess, onGoToLogin }) {
                             required
                         />
                     </div>
-                    
+
                     <button type="submit" className="auth-submit-btn" disabled={loading}>
-                        {loading ? 'Creating Account...' : 'Register'}
+                        {loading ? 'Creating Account...' : 'Create Account'}
                     </button>
                 </form>
-                
+
                 <div className="auth-footer">
                     <p>Already have an account? <button onClick={onGoToLogin} className="auth-link">Login here</button></p>
                 </div>

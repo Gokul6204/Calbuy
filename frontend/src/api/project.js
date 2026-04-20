@@ -1,3 +1,4 @@
+import { ensureCsrfCookie, csrfHeaders } from './http'
 const API_BASE = '/api'
 
 async function handleResponse(res) {
@@ -21,35 +22,58 @@ async function handleResponse(res) {
 }
 
 export async function fetchProjects() {
-    const res = await fetch(`${API_BASE}/projects/`)
+    const res = await fetch(`${API_BASE}/projects/`, { credentials: 'include' })
     return handleResponse(res)
 }
 
 export async function createProject(projectData) {
+    await ensureCsrfCookie()
     const res = await fetch(`${API_BASE}/projects/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify(projectData),
     })
     return handleResponse(res)
 }
 
 export async function deleteProject(id) {
-    const res = await fetch(`${API_BASE}/projects/${id}/`, { method: 'DELETE' })
+    await ensureCsrfCookie()
+    const res = await fetch(`${API_BASE}/projects/${id}/`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { ...csrfHeaders() },
+    })
     if (res.status === 204) return
     return handleResponse(res)
 }
 
 export async function updateProject(id, projectData) {
+    await ensureCsrfCookie()
     const res = await fetch(`${API_BASE}/projects/${id}/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify(projectData),
     })
     return handleResponse(res)
 }
 
 export async function fetchProjectQuotations(projectId) {
-    const res = await fetch(`${API_BASE}/projects/${projectId}/quotations/`)
+    const res = await fetch(`${API_BASE}/projects/${projectId}/quotations/`, { credentials: 'include' })
+    return handleResponse(res)
+}
+
+export async function issuePO(projectId, vendorId, pdfContent = null) {
+    await ensureCsrfCookie()
+    const res = await fetch(`${API_BASE}/projects/${projectId}/issue-po/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+        body: JSON.stringify({ 
+            vendor_id: vendorId,
+            pdf_content: pdfContent 
+        }),
+    })
     return handleResponse(res)
 }

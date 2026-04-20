@@ -31,17 +31,34 @@ class Quotation(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     vendor_id = models.CharField(max_length=50) # Link by business ID
     bom_item_id = models.IntegerField(null=True, blank=True) # FK to BOMRecord
-    material_name = models.CharField(max_length=255)
+    material_name = models.CharField(max_length=255) # Group/Material
+    part_name = models.CharField(max_length=255, null=True, blank=True)
+    size_spec = models.CharField(max_length=255, null=True, blank=True)
     
     price = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     currency = models.CharField(max_length=10, default="USD")
+    negotiation_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     count = models.IntegerField(null=True, blank=True)
     lead_time_days = models.CharField(max_length=100, null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
     attachment = models.FileField(upload_to='quotations/', null=True, blank=True)
+    
+    # Shipment and Vendor info
     shipment_from_location = models.CharField(max_length=255, null=True, blank=True)
+    shipment_address = models.CharField(max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    state = models.CharField(max_length=100, null=True, blank=True)
+    country = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Geocoding and distance
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    distance_to_organization_km = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
     submission_deadline = models.DateTimeField(null=True, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
+    po_issued = models.BooleanField(default=False)
+    po_issued_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -46,8 +46,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
-  overflow-y: visible; /* Allow shadow/transforms to be seen */
-  padding: 1rem 0.5rem 1.5rem; /* Balanced padding for hover expansion */
+  overflow-y: visible;
+  /* Allow shadow/transforms to be seen */
+  padding: 1rem 0.5rem 1.5rem;
+  /* Balanced padding for hover expansion */
 }
 
 .project-card {
@@ -182,24 +184,37 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
   width: 100%;
-  max-width: 480px;
+  max-width: 680px;
+  overflow-y: scroll;
+  scrollbar-width: none;
   background: var(--surface-1);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-xl);
-  overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .modal-header {
@@ -229,7 +244,7 @@
   padding: 1.5rem;
 }
 
-.form-group label {
+.form-Group label {
   display: block;
   margin-bottom: 0.5rem;
   font-size: 0.8125rem;
@@ -338,7 +353,9 @@
 }
 
 @keyframes spinner-border {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .bg-light {

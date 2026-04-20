@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { ensureCsrfCookie, csrfHeaders } from '../api/http';
 import { FaUser, FaBuilding, FaMapMarkerAlt, FaEnvelope, FaPhone, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 import './ProfilePage.css';
 
@@ -8,7 +9,11 @@ export function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         organization_name: '',
-        organization_location: '',
+        mail_id: '',
+        address: '',
+        city: '',
+        state: '',
+        country: '',
         email: '',
         phone_number: ''
     });
@@ -19,12 +24,17 @@ export function ProfilePage() {
         if (user) {
             setFormData({
                 organization_name: user.organization_name || '',
-                organization_location: user.organization_location || '',
+                mail_id: user.mail_id || '',
+                address: user.address || '',
+                city: user.city || '',
+                state: user.state || '',
+                country: user.country || '',
                 email: user.email || '',
                 phone_number: user.phone_number || ''
             });
         }
     }, [user]);
+
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,16 +46,28 @@ export function ProfilePage() {
         setMessage({ type: '', text: '' });
 
         try {
-            // In a real app, you'd call your backend API here
-            // const response = await fetch('/api/accounts/profile/', { method: 'PUT', ... })
+            await ensureCsrfCookie();
+            const response = await fetch('/api/accounts/profile/', {
+                method: 'PUT',
+                credentials: 'include',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...csrfHeaders(),
+                },
+                body: JSON.stringify(formData),
+            });
             
-            // For now, simulate API call and update context
-            await new Promise(resolve => setTimeout(resolve, 500));
-            updateProfile(formData);
-            setIsEditing(false);
-            setMessage({ type: 'success', text: 'Profile updated successfully!' });
+            if (response.ok) {
+                const updatedData = await response.json();
+                updateProfile(updatedData);
+                setIsEditing(false);
+                setMessage({ type: 'success', text: 'Profile updated successfully!' });
+            } else {
+                const data = await response.json();
+                setMessage({ type: 'error', text: data.error || 'Failed to update profile.' });
+            }
         } catch (err) {
-            setMessage({ type: 'error', text: 'Failed to update profile.' });
+            setMessage({ type: 'error', text: 'Something went wrong. Please try again.' });
         } finally {
             setLoading(false);
         }
@@ -96,21 +118,79 @@ export function ProfilePage() {
                             </div>
 
                             <div className="form-item">
-                                <label><FaMapMarkerAlt /> Location</label>
+                                <label><FaEnvelope /> Official Mail ID</label>
                                 {isEditing ? (
                                     <input
-                                        name="organization_location"
-                                        value={formData.organization_location}
+                                        name="mail_id"
+                                        type="email"
+                                        value={formData.mail_id}
                                         onChange={handleChange}
                                         required
                                     />
                                 ) : (
-                                    <p>{user.organization_location}</p>
+                                    <p>{user.mail_id || 'Not specified'}</p>
                                 )}
                             </div>
 
+                            <div className="form-item full-width">
+                                <label><FaMapMarkerAlt /> Address</label>
+                                {isEditing ? (
+                                    <textarea
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleChange}
+                                        rows={2}
+                                        required
+                                    />
+                                ) : (
+                                    <p>{user.address}</p>
+                                )}
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-item">
+                                    <label>City</label>
+                                    {isEditing ? (
+                                        <input
+                                            name="city"
+                                            value={formData.city}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    ) : (
+                                        <p>{user.city}</p>
+                                    )}
+                                </div>
+                                <div className="form-item">
+                                    <label>State</label>
+                                    {isEditing ? (
+                                        <input
+                                            name="state"
+                                            value={formData.state}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    ) : (
+                                        <p>{user.state}</p>
+                                    )}
+                                </div>
+                                <div className="form-item">
+                                    <label>Country</label>
+                                    {isEditing ? (
+                                        <input
+                                            name="country"
+                                            value={formData.country}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    ) : (
+                                        <p>{user.country}</p>
+                                    )}
+                                </div>
+                            </div>
+
                             <div className="form-item">
-                                <label><FaEnvelope /> Email Address</label>
+                                <label><FaEnvelope /> Login Email</label>
                                 {isEditing ? (
                                     <input
                                         name="email"
@@ -138,6 +218,7 @@ export function ProfilePage() {
                                 )}
                             </div>
                         </div>
+
 
                         {isEditing && (
                             <div className="form-actions">

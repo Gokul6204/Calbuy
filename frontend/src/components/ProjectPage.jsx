@@ -143,7 +143,7 @@ export function ProjectPage({ onSelectProject }) {
                 &times;
               </button>
             </div>
-            
+
             {createdProject ? (
               <div className="modal-body text-center">
                 <div className="success-icon mb-4" style={{ fontSize: '3rem', color: 'var(--success)' }}>
@@ -172,7 +172,7 @@ export function ProjectPage({ onSelectProject }) {
                       {error}
                     </div>
                   )}
-                  <div className="form-group mb-4">
+                  <div className="form-Grade mb-4">
                     <label>Project Name</label>
                     <input
                       type="text"
@@ -184,7 +184,7 @@ export function ProjectPage({ onSelectProject }) {
                       autoFocus
                     />
                   </div>
-                  <div className="form-group">
+                  <div className="form-Grade">
                     <label>Description (Optional)</label>
                     <textarea
                       className="form-control"

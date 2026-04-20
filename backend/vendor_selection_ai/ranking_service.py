@@ -21,88 +21,90 @@ class VendorRankingService:
 
     def rank_vendors(self, quotation_data, required_quantity, weights=None):
         """
-        quotation_data: List of dicts matching the feature schema
-        required_quantity: The quantity needed for the RFQ
-        weights: Dict with 'price', 'lead_time', 'quantity' keys (summing to 1 or will be normalized)
+        quotation_data: List of dicts with [unit_price, negotiation_percentage, lead_time_days, distance_to_organization_km]
         """
         if self.model is None:
             return {"error": "Model not trained or assets missing"}
 
-        # Default weights if not provided
+        # Default weights include distance now
         if not weights:
-            weights = {'price': 0.6, 'lead_time': 0.2, 'quantity': 0.2}
+            weights = {'price': 0.4, 'lead_time': 0.2, 'distance': 0.3, 'negotiation': 0.1}
         else:
-            # Normalize weights to ensure they sum to 1.0
+            # Normalize provided weights
             total = sum(weights.values())
             if total > 0:
                 weights = {k: v / total for k, v in weights.items()}
             else:
-                weights = {'price': 0.6, 'lead_time': 0.2, 'quantity': 0.2}
+                weights = {'price': 0.4, 'lead_time': 0.2, 'distance': 0.3, 'negotiation': 0.1}
 
         df = pd.DataFrame(quotation_data)
         
-        # 1. Feature Engineering
-        df_engineered = self.preprocessor.engineer_features(df, required_qty=required_quantity)
+        # 1. Transform for model
+        X = self.preprocessor.transform(df)
         
-        # 2. Transform for model
-        X = self.preprocessor.transform(df_engineered)
-        
-        # 3. Hybrid Scoring System
-        # ml_scores logic...
+        # 2. Get ML Probabilities (likelihood of being 'selected')
         probs = self.model.predict_proba(X)
         ml_scores = probs[:, 1] if probs.shape[1] > 1 else np.full(probs.shape[0], 0.5)
         
-        # Heuristic Component
-        min_price = df['total_price'].min() if not df['total_price'].empty else 0
+        # 3. Heuristic Component for direct comparison
+        min_price = df['unit_price'].min() if not df['unit_price'].empty else 0
         min_lead = df['lead_time_days'].min() if not df['lead_time_days'].empty else 1
+        min_dist = df['distance_to_organization_km'].min() if not df['distance_to_organization_km'].empty else 0
         
         def calculate_heuristic(row):
-            # 1. Price Score
-            p_score = (min_price / row['total_price']) if row['total_price'] > 0 else 0
-            
-            # 2. Lead Time Score
+            # Normalizing (Higher is better)
+            p_score = (min_price / row['unit_price']) if row['unit_price'] > 0 else 0
             l_score = (min_lead / row['lead_time_days']) if row['lead_time_days'] > 0 else 0
             
-            # 3. Quantity Score
-            q_score = min(1.0, row['supplying_quantity'] / required_quantity) if required_quantity > 0 else 1.0
+            # Distance score
+            d_score = 0
+            if row['distance_to_organization_km'] is not None:
+                d_val = float(row['distance_to_organization_km'])
+                d_score = (min_dist / d_val) if d_val > 0 else 1.0
             
-            return (p_score * weights['price']) + (l_score * weights['lead_time']) + (q_score * weights['quantity'])
+            # Negotiation score (more negotiation is room for saving)
+            n_score = row['negotiation_percentage'] / 100.0 if 'negotiation_percentage' in row else 0
+            
+            return (p_score * weights.get('price', 0.4)) + \
+                   (l_score * weights.get('lead_time', 0.2)) + \
+                   (d_score * weights.get('distance', 0.3)) + \
+                   (n_score * weights.get('negotiation', 0.1))
 
         heuristic_scores = df.apply(calculate_heuristic, axis=1)
         
-        # C. Final Combined Score (70% Heuristic, 30% ML)
-        # We give more weight to the heuristic for immediate logical ranking
-        final_scores = (heuristic_scores * 0.7) + (ml_scores * 0.3)
+        # Final Combined Score (High ML weight for "model selection")
+        # 50% Model Prediction, 50% Direct Heuristic comparison
+        final_scores = (heuristic_scores * 0.5) + (ml_scores * 0.5)
         
-        df['ai_score'] = final_scores
+        df['ai_score'] = (final_scores * 100).round(2) # Convert to 0-100 scale
         
         # 4. Generate Explanations
-        df['recommendation_reason'] = df.apply(self._generate_reason, axis=1, args=(required_quantity, min_price, min_lead))
+        df['recommendation_reason'] = df.apply(self._generate_reason, axis=1, args=(min_price, min_lead, min_dist))
         
         # 5. Rank
         ranked_df = df.sort_values(by='ai_score', ascending=False)
         
         return ranked_df.to_dict(orient='records')
 
-    def _generate_reason(self, row, required_qty, min_price, min_lead):
+    def _generate_reason(self, row, min_price, min_lead, min_dist):
         reasons = []
-        if row['total_price'] <= min_price and row['total_price'] > 0:
+        if row['unit_price'] <= min_price * 1.05 and row['unit_price'] > 0:
              reasons.append("Most competitive price")
-        if row['supplying_quantity'] >= required_qty:
-            reasons.append("Full quantity available")
             
-        # Explode the lead time logic as requested
-        if row['lead_time_days'] <= min_lead:
-            reasons.append(f"Fastest lead time ({row['lead_time_days']} days)")
-        elif row['lead_time_days'] <= 7:
+        if row['lead_time_days'] <= min_lead + 2:
             reasons.append(f"Fast delivery ({row['lead_time_days']} days)")
-        else:
-            reasons.append(f"Lead time: {row['lead_time_days']} days")
             
-        if row['organization_location'] == row['shipment_from_location']:
-            reasons.append("Same-city vendor")
+        d_val = row.get('distance_to_organization_km')
+        if d_val is not None:
+            if float(d_val) <= min_dist * 1.1 or float(d_val) < 50:
+                reasons.append("Geographically closest")
+            elif float(d_val) < 500:
+                reasons.append("Local region")
         
+        if row.get('negotiation_percentage', 0) > 15:
+            reasons.append("High negotiation potential")
+            
         if not reasons:
-            reasons.append("Balanced price and lead time")
+            reasons.append("Balanced score across all metrics")
             
         return ", ".join(reasons[:3])

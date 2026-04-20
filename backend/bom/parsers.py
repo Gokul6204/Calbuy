@@ -10,6 +10,7 @@ from decimal import Decimal, InvalidOperation
 
 import openpyxl
 import pdfplumber
+from .kss import extract_kss_data_from_text
 
 
 # Column name variants we accept (case-insensitive)
@@ -18,6 +19,12 @@ MATERIAL_ALIASES = ("material", "material description", "description", "part", "
 QUANTITY_ALIASES = ("quantity", "qty", "qty required", "required qty", "amount", "qty req")
 PART_NUMBER_ALIASES = ("part_number", "part number", "part no", "p/n", "part_no", "pn")
 DATE_ALIASES = ("date of requirement", "date_of_requirement", "requirement date", "required date", "date", "due date")
+PART_ALIASES = ("part", "type", "shape")
+SIZE_ALIASES = ("size", "dia", "dimension")
+GRADE_ALIASES = ("Grade", "material Grade", "Grade", "class")
+LENGTH_AREA_ALIASES = ("length/area", "length_area", "length", "area", "value")
+QUANTITY_TYPE_ALIASES = ("quantity type", "quantity_type", "type", "qty type", "q type")
+UNIT_ALIASES = ("unit", "uom", "measure", "units")
 
 
 def _normalize_headers(row):
@@ -39,8 +46,20 @@ def _normalize_headers(row):
             normalized["quantity"] = i
         elif key in PART_NUMBER_ALIASES or "part number" in key or "p/n" in key:
             normalized["part_number"] = i
+        elif key in PART_ALIASES:
+            normalized["part"] = i
+        elif key in SIZE_ALIASES:
+            normalized["size"] = i
+        elif key in GRADE_ALIASES:
+            normalized["grade_name"] = i
+        elif key in LENGTH_AREA_ALIASES:
+            normalized["length_area"] = i
         elif key in DATE_ALIASES or "date" in key or "requirement" in key:
             normalized["date_of_requirement"] = i
+        elif key in QUANTITY_TYPE_ALIASES:
+            normalized["quantity_type"] = i
+        elif key in UNIT_ALIASES:
+            normalized["unit"] = i
     if "bom_id" not in normalized:
         normalized["bom_id"] = 0
     if "material" not in normalized:
@@ -49,6 +68,14 @@ def _normalize_headers(row):
         normalized["quantity"] = 2 if len(row) > 2 else 1
     if "part_number" not in normalized:
         normalized["part_number"] = None
+    if "part" not in normalized:
+        normalized["part"] = None
+    if "size" not in normalized:
+        normalized["size"] = None
+    if "grade_name" not in normalized:
+        normalized["grade_name"] = None
+    if "length_area" not in normalized:
+        normalized["length_area"] = None
     if "date_of_requirement" not in normalized:
         normalized["date_of_requirement"] = 3 if len(row) > 3 else None
     return normalized
@@ -91,13 +118,23 @@ def _row_to_bom_dict(row, headers, source_file=""):
     material = str(get_cell(headers["material"])).strip() or "N/A"
     quantity = _parse_quantity(get_cell(headers["quantity"]))
     part_number = str(get_cell(headers.get("part_number"))).strip() if headers.get("part_number") is not None else ""
+    part = str(get_cell(headers.get("part"))).strip() if headers.get("part") is not None else ""
+    size = str(get_cell(headers.get("size"))).strip() if headers.get("size") is not None else ""
+    grade_name = str(get_cell(headers.get("grade_name"))).strip() if headers.get("grade_name") is not None else material
+    length_area = _parse_quantity(get_cell(headers.get("length_area"))) if headers.get("length_area") is not None else quantity
     date_val = get_cell(headers["date_of_requirement"]) if headers.get("date_of_requirement") is not None else None
     date_of_req = _parse_date(date_val)
     return {
         "bom_id": bom_id,
         "part_number": part_number,
+        "part": part,
+        "size": size,
+        "grade_name": grade_name,
+        "length_area": length_area,
         "material": material,
         "quantity": quantity,
+        "quantity_type": str(get_cell(headers.get("quantity_type"))).strip() if headers.get("quantity_type") is not None else "",
+        "unit": str(get_cell(headers.get("unit"))).strip() if headers.get("unit") is not None else "",
         "date_of_requirement": date_of_req,
         "source_file": source_file,
     }
@@ -174,4 +211,17 @@ def parse_file(file_content, filename):
         return parse_csv(file_content, filename)
     if ext == "pdf":
         return parse_pdf(file_content, filename)
-    raise ValueError(f"Unsupported format: {ext}. Use .xlsx, .csv, or .pdf")
+    if ext == "kss":
+        try:
+            text = file_content.decode("utf-8")
+        except UnicodeDecodeError:
+            text = file_content.decode("latin-1")
+        rows = extract_kss_data_from_text(text, source_file=filename)
+        for row in rows:
+            row["material"] = row.get("grade_name", "")
+            row["quantity"] = row.get("quantity", Decimal("0"))
+            row["part_number"] = row.get("part", "")
+            row["quantity_type"] = row.get("quantity_type", "")
+            row["unit"] = row.get("unit", "")
+        return rows
+    raise ValueError(f"Unsupported format: {ext}. Use .xlsx, .csv, .pdf, or .kss")

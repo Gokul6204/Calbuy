@@ -64,7 +64,7 @@ export function ManageMaterialsModal({ open, onClose, vendor }) {
         <div className="add-material-overlay" onClick={onClose} role="dialog">
             <div className="add-material-modal" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
                 <div className="add-material-header">
-                    <div className="header-text-group">
+                    <div className="header-text-grade">
                         <h3>Vendor Materials</h3>
                         <p className="v-subtitle">
                             {vendor.vendor_name} <span className="v-badge">{vendor.vendor_id}</span>
@@ -83,8 +83,8 @@ export function ManageMaterialsModal({ open, onClose, vendor }) {
                         </button>
                     </div>
 
-                    <AddMaterialModal 
-                        open={showAddModal} 
+                    <AddMaterialModal
+                        open={showAddModal}
                         onClose={() => setShowAddModal(false)}
                         onSuccess={loadMaterials}
                         vendorId={vendor.id}
@@ -102,8 +102,7 @@ export function ManageMaterialsModal({ open, onClose, vendor }) {
                                 {materials.map((m) => (
                                     <div key={m.id} className="material-row mini">
                                         <div className="m-info">
-                                            {m.part_number && <span className="m-pn">{m.part_number}</span>}
-                                            <span className="m-name">{m.material}</span>
+                                            <span className="m-name">{m.part_name || m.part}</span>
                                         </div>
                                         <button
                                             className="delete-mini"

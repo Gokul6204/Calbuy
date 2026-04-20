@@ -20,8 +20,8 @@ export function ProfileMenu({ onProfileClick, onLogout }) {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         setIsOpen(false);
         if (onLogout) onLogout();
     };
@@ -43,33 +43,33 @@ export function ProfileMenu({ onProfileClick, onLogout }) {
                         <span className="user-name">{user?.organization_name || 'User'}</span>
                         <span className="user-role">{user?.email}</span>
                     </div>
-                    
+
                     <div className="dropdown-divider"></div>
-                    
+
                     <button className="dropdown-item" onClick={handleProfileClick}>
                         <FaUser /> View Profile
                     </button>
 
                     <div className="dropdown-divider"></div>
-                    
+
                     <div className="theme-options">
                         <div className="theme-options-title">Theme Preference</div>
-                        <div className="theme-btn-group">
-                            <button 
+                        <div className="theme-btn-Grade">
+                            <button
                                 className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
                                 onClick={() => setTheme('light')}
                                 title="Light Mode"
                             >
                                 <FaSun />
                             </button>
-                            <button 
+                            <button
                                 className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
                                 onClick={() => setTheme('dark')}
                                 title="Dark Mode"
                             >
                                 <FaMoon />
                             </button>
-                            <button 
+                            <button
                                 className={`theme-btn ${theme === 'system' ? 'active' : ''}`}
                                 onClick={() => setTheme('system')}
                                 title="System Default"

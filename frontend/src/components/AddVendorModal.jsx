@@ -8,9 +8,13 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
     const [vendorName, setVendorName] = useState('')
     const [mobileNumber, setMobileNumber] = useState('')
     const [email, setEmail] = useState('')
-    const [location, setLocation] = useState('')
+    const [city, setCity] = useState('')
+    const [state, setState] = useState('')
+    const [country, setCountry] = useState('')
     const [address, setAddress] = useState('')
+    const [category, setCategory] = useState('')
     const [saving, setSaving] = useState(false)
+
     const [error, setError] = useState(null)
     const [errors, setErrors] = useState({}) // Field-specific errors
 
@@ -21,15 +25,21 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                 setVendorName(initialData.vendor_name ?? '')
                 setMobileNumber(initialData.mobile_number ?? '')
                 setEmail(initialData.email ?? '')
-                setLocation(initialData.location ?? '')
+                setCity(initialData.city ?? '')
+                setState(initialData.state ?? '')
+                setCountry(initialData.country ?? '')
                 setAddress(initialData.address ?? '')
+                setCategory(initialData.category ?? '')
             } else {
                 setVendorId('')
                 setVendorName('')
                 setMobileNumber('')
                 setEmail('')
-                setLocation('')
+                setCity('')
+                setState('')
+                setCountry('')
                 setAddress('')
+                setCategory('')
             }
             setError(null)
             setErrors({})
@@ -62,8 +72,11 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                 vendor_name: vendorName.trim(),
                 mobile_number: mobileNumber.trim(),
                 email: email.trim(),
-                location: location.trim(),
+                city: city.trim(),
+                state: state.trim(),
+                country: country.trim(),
                 address: address.trim(),
+                category: category.trim(),
             }
             if (isEdit) {
                 await updateVendor(initialData.id, payload)
@@ -94,7 +107,7 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                 </div>
                 <form onSubmit={handleSubmit} className="add-material-form">
                     {error && <p className="add-material-error">{error}</p>}
-                    
+
                     <div className="form-grid-row">
                         <div className="input-group">
                             <label>Vendor ID <span className="required-star">*</span></label>
@@ -117,6 +130,18 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                                 className={errors.vendor_name ? 'field-error' : ''}
                                 placeholder="Company name"
                                 required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="form-grid-row">
+                        <div className="input-group">
+                            <label>Category</label>
+                            <input
+                                type="text"
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                placeholder="e.g. Fabrication, Casting"
                             />
                         </div>
                     </div>
@@ -148,16 +173,39 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                         </div>
                     </div>
 
-                    <div className="input-group">
-                        <label>Location <span className="required-star">*</span></label>
-                        <input
-                            type="text"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            placeholder="City, State"
-                            required
-                        />
+                    <div className="form-grid-row">
+                        <div className="input-group">
+                            <label>City <span className="required-star">*</span></label>
+                            <input
+                                type="text"
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                                placeholder="e.g. Chennai"
+                                required
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>State <span className="required-star">*</span></label>
+                            <input
+                                type="text"
+                                value={state}
+                                onChange={(e) => setState(e.target.value)}
+                                placeholder="e.g. TN"
+                                required
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Country <span className="required-star">*</span></label>
+                            <input
+                                type="text"
+                                value={country}
+                                onChange={(e) => setCountry(e.target.value)}
+                                placeholder="e.g. India"
+                                required
+                            />
+                        </div>
                     </div>
+
 
                     <div className="input-group">
                         <label>Full Address <span className="required-star">*</span></label>

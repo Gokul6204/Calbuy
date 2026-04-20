@@ -1,23 +1,30 @@
 import { useState, useEffect } from 'react'
-import { FaProjectDiagram, FaEnvelope, FaLock, FaCheckCircle, FaExclamationCircle, FaUserShield, FaClock, FaCheckSquare } from 'react-icons/fa'
+import { 
+    FaProjectDiagram, FaEnvelope, FaLock, FaCheckCircle, 
+    FaExclamationCircle, FaUserShield, FaClock, FaCheckSquare,
+    FaArrowLeft, FaSignOutAlt, FaLayerGroup, FaDolly, FaCalendarAlt 
+} from 'react-icons/fa'
 import { MdDateRange, MdProductionQuantityLimits } from "react-icons/md";
 import { portalLogin, fetchVendorQuotations, submitQuotation, fetchPortalItems } from '../api/vendor'
+import { useAlert } from '../context/NotificationContext'
 import './VendorPortal.css'
 
 export function VendorPortal({ initialProjectId }) {
+    const { showAlert } = useAlert()
     const [view, setView] = useState('login') // 'login', 'dashboard', 'submission-form'
     const [credentials, setCredentials] = useState({ project_id: initialProjectId || '', email: '', password: '' })
     const [auth, setAuth] = useState(null)
-    const [rfqs, setRfqs] = useState([
-
-    ])
+    const [rfqs, setRfqs] = useState([])
     const [selectedRfq, setSelectedRfq] = useState(null)
+    const [loading, setLoading] = useState(false)
     const [submission, setSubmission] = useState({
-        part_number: '',
-        material_name: '',
-        location: '',
+        shipment_address: '',
+        city: '',
+        state: '',
+        country: '',
         lead_time: '',
-        count: '',
+        currency: 'USD',
+        negotiation_percentage: 0,
         price: '',
         notes: ''
     })
@@ -46,37 +53,34 @@ export function VendorPortal({ initialProjectId }) {
                 token: data.token
             });
 
-            // Load both required items and existing quotations
+            setLoading(true);
             const [items, quotes] = await Promise.all([
                 fetchPortalItems(data.project_id, data.vendor_id),
                 fetchVendorQuotations(data.project_id, data.vendor_id)
             ]);
 
-            // Merge them: if an item has a quote, mark it as submitted and include its data
             const merged = items.map(item => {
-                // Robust case-insensitive and trimmed matching
-                const q = quotes.find(quote => 
+                // If it was already submitted, keep it. 
+                // But we can also check against quotes to be 100% sure we have the latest.
+                const q = quotes.find(quote =>
+                    (quote.part_name || '').trim().toLowerCase() === (item.part_name || '').trim().toLowerCase() &&
+                    (quote.size_spec || '').trim().toLowerCase() === (item.size || '').trim().toLowerCase() &&
                     (quote.material_name || '').trim().toLowerCase() === (item.material || '').trim().toLowerCase()
                 );
-                
-                // Robust check: Has the vendor actually provided data?
-                // Using != null to catch both null and undefined, and ensuring the value isn't an empty string
-                const hasPrice = q && q.price !== null && q.price !== undefined && q.price !== '';
-                const hasCount = q && q.count !== null && q.count !== undefined && q.count !== '';
-                const isRealSubmission = hasPrice || hasCount;
 
-                if (isRealSubmission) {
+                if (q && q.price) {
                     return {
                         ...item,
                         status: 'submitted',
                         price: q.price,
-                        count: q.count,
-                        lead_time: q.lead_time_days || q.lead_time,
+                        lead_time: q.lead_time,
                         notes: q.notes,
+                        currency: q.currency,
+                        negotiation_percentage: q.negotiation_percentage,
                         existing_quote_id: q.id
                     };
                 }
-                return { ...item, status: 'pending' };
+                return item;
             });
 
             setRfqs(merged);
@@ -86,6 +90,7 @@ export function VendorPortal({ initialProjectId }) {
             setError(err.message || 'Invalid project credentials or unauthorized email.');
         } finally {
             setSubmitting(false);
+            setLoading(false);
         }
     }
 
@@ -94,48 +99,66 @@ export function VendorPortal({ initialProjectId }) {
         setSubmitting(true)
         try {
             await submitQuotation(auth.project_id, auth.vendor_id, {
-                material_name: submission.material_name,
-                part_number: submission.part_number,
-                location: submission.location,
-                count: submission.count,
-                price: submission.price,
+                material_name: selectedRfq.material,
+                part_number: selectedRfq.part_name,
+                size_spec: selectedRfq.size,
+                shipment_address: submission.shipment_address,
+                city: submission.city,
+                state: submission.state,
+                country: submission.country,
                 lead_time: submission.lead_time,
+                price: submission.price,
                 notes: submission.notes,
-                bom_item_id: selectedRfq.id || 0
+                currency: submission.currency,
+                negotiation_percentage: submission.negotiation_percentage
             });
-            alert("Quotation submitted successfully for " + submission.material_name)
+            showAlert("Quotation submitted successfully for " + selectedRfq.part_name, "success")
 
-            // Update local state by re-fetching items to ensure full data sync
-            const items = await fetchPortalItems(auth.project_id, auth.vendor_id);
-            const quotes = await fetchVendorQuotations(auth.project_id, auth.vendor_id);
+            setLoading(true);
+            const [items, quotes] = await Promise.all([
+                fetchPortalItems(auth.project_id, auth.vendor_id),
+                fetchVendorQuotations(auth.project_id, auth.vendor_id)
+            ]);
+            
             const merged = items.map(item => {
-                const q = quotes.find(quote => 
+                const q = quotes.find(quote =>
+                    (quote.part_name || '').trim().toLowerCase() === (item.part_name || '').trim().toLowerCase() &&
+                    (quote.size_spec || '').trim().toLowerCase() === (item.size || '').trim().toLowerCase() &&
                     (quote.material_name || '').trim().toLowerCase() === (item.material || '').trim().toLowerCase()
                 );
-                const hasPrice = q && q.price !== null && q.price !== undefined && q.price !== '';
-                const hasCount = q && q.count !== null && q.count !== undefined && q.count !== '';
-                const isRealSubmission = hasPrice || hasCount;
-
-                return isRealSubmission ? {
-                    ...item,
-                    status: 'submitted',
-                    price: q.price,
-                    count: q.count,
-                    lead_time: q.lead_time_days || q.lead_time,
-                    notes: q.notes,
-                    existing_quote_id: q.id
-                } : { ...item, status: 'pending' };
+                if (q && q.price) {
+                    return {
+                        ...item,
+                        status: 'submitted',
+                        price: q.price,
+                        lead_time: q.lead_time,
+                        notes: q.notes,
+                        currency: q.currency,
+                        negotiation_percentage: q.negotiation_percentage,
+                        existing_quote_id: q.id
+                    };
+                }
+                return item;
             });
 
             setRfqs(merged);
             setView('dashboard');
         } catch (err) {
             console.error('Submission failed:', err);
-            alert(err.message || 'Failed to submit quotation.');
+            showAlert(err.message || 'Failed to submit quotation.', "error");
         } finally {
             setSubmitting(false)
+            setLoading(false)
         }
     }
+
+    const getDisplayUnit = (partName, existingUnit) => {
+        if (existingUnit && existingUnit !== 'nos') return existingUnit;
+        const name = (partName || '').toUpperCase();
+        if (name.includes('PLATE') || name.includes('(PL)')) return 'sq.in';
+        if (name.includes('ANGLE') || name.includes('(L)') || name.includes('CHAN') || name.includes('BEAM')) return 'ft';
+        return existingUnit || 'nos';
+    };
 
     if (view === 'login') {
         return (
@@ -155,7 +178,7 @@ export function VendorPortal({ initialProjectId }) {
                     </header>
 
                     <form onSubmit={handleLogin} className="login-form">
-                        <div className="form-group">
+                        <div className="form-Grade">
                             <label><FaEnvelope /> Email Address</label>
                             <input
                                 type="email"
@@ -165,7 +188,7 @@ export function VendorPortal({ initialProjectId }) {
                                 required
                             />
                         </div>
-                        <div className="form-group">
+                        <div className="form-Grade">
                             <label><FaLock /> Access Password</label>
                             <input
                                 type="password"
@@ -199,27 +222,25 @@ export function VendorPortal({ initialProjectId }) {
             return new Date() > deadline;
         };
 
+        const groupedRfqs = rfqs.reduce((acc, rfq) => {
+            const cat = rfq.part_name || 'Other';
+            if (!acc[cat]) acc[cat] = [];
+            acc[cat].push(rfq);
+            return acc;
+        }, {});
+
         const handleActionClick = (rfq) => {
             setSelectedRfq(rfq);
-
-            // Try to parse location from notes if it was concatenated
-            let location = '';
-            let notes = rfq.notes || '';
-            // Safety check for notes
-            if (notes && notes.startsWith('Location: ')) {
-                const parts = notes.split('. ');
-                location = parts[0].replace('Location: ', '');
-                notes = parts.slice(1).join('. ');
-            }
-
             setSubmission({
-                part_number: rfq.part_number || '',
-                material_name: rfq.material || '',
-                count: rfq.status === 'submitted' ? (rfq.count || rfq.quantity) : (rfq.quantity || ''),
-                location: location,
-                lead_time: rfq.lead_time || rfq.lead_time_days || '',
+                shipment_address: rfq.shipment_address || '',
+                city: rfq.city || '',
+                state: rfq.state || '',
+                country: rfq.country || '',
+                lead_time: rfq.lead_time || '',
                 price: rfq.price || '',
-                notes: notes
+                negotiation_percentage: rfq.negotiation_percentage || 0,
+                notes: rfq.notes || '',
+                currency: rfq.currency || 'USD'
             });
             setView('submission-form');
         };
@@ -229,80 +250,98 @@ export function VendorPortal({ initialProjectId }) {
                 <header className="portal-dash-header">
                     <div className="header-left">
                         <div className="brand-small">
-                            <img src="/assest/images/calbuy-logo.jpeg" alt="Logo" className="mini-logo" />
-                            <h3>Vendor <span>Hub</span></h3>
+                            <img src="/assest/images/calbuy-logo.jpeg" alt="Calbuy" className="mini-logo" />
+                            <h3>CALBY <span>PORTAL</span></h3>
                         </div>
                     </div>
-
                     <div className="header-right">
                         <div className="header-project-badge">
                             <span className="label">ACTIVE PROJECT</span>
                             <span className="value">{auth.project}</span>
                         </div>
-                        <button className="btn-logout" onClick={() => {
+                        <button className="btn btn-outline-danger" onClick={() => {
                             setAuth(null);
                             setRfqs([]);
-                            setCredentials(prev => ({ ...prev, password: '' })); // Keep email but clear password
                             setView('login');
-                        }}>Logout</button>
+                        }}>
+                            <FaSignOutAlt /> Logout
+                        </button>
                     </div>
                 </header>
 
                 <div className="portal-scroll-container">
                     <div className="dash-hero-minimal">
                         <div className="hero-content">
-                            <h4>Required Items <span>List</span></h4>
+                            <p>Welcome back, {auth.vendor_name}</p>
+                            <h4>Required <span>Materials</span></h4>
                         </div>
                     </div>
 
                     <div className="dash-content-aligned">
-                        <div className="portal-container">
-                            <div className="rfq-grid-portal">
-                                {rfqs.map(r => {
-                                    const pastDeadline = isPastDeadline(r.deadline);
-                                    return (
-                                        <div key={r.id} className={`rfq-portal-card shadow-sm ${r.status === 'submitted' ? 'status-submitted' : ''}`}>
-                                            <div className="card-top">
-                                                <div className="mat-badge-lg">{r.material}</div>
-                                                <div className="rfq-id">{r.part_number || r.id}</div>
-                                            </div>
-                                            <div className="card-details">
-                                                <div className="detail-item">
-                                                    <label><MdProductionQuantityLimits /> Quantity</label>
-                                                    <span>{r.quantity} Units</span>
-                                                </div>
-                                                <div className="detail-item">
-                                                    <label><MdDateRange /> Target Date</label>
-                                                    <span>{new Date(r.expected_date).toLocaleDateString()}</span>
-                                                </div>
-                                                <div className="detail-item">
-                                                    <label><FaClock /> Deadline</label>
-                                                    <span className={`deadline-badge ${pastDeadline ? 'expired' : ''}`}>
-                                                        {new Date(r.deadline).toLocaleDateString()}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="card-footer-portal">
-                                            <div className="submission-actions-unified">
-                                                {r.status === 'submitted' && (
-                                                    <div className="submitted-notice-inline">
-                                                        <FaCheckCircle /> Quotation Submitted
-                                                    </div>
-                                                )}
-                                                <button
-                                                    className={`btn ${r.status === 'submitted' ? 'btn-secondary' : 'btn-primary'} portal-btn-main`}
-                                                    disabled={pastDeadline}
-                                                    onClick={() => handleActionClick(r)}
-                                                >
-                                                    {pastDeadline ? "Submission Closed" : (r.status === 'submitted' ? "Edit & Resubmit" : "Submit Quotation")}
-                                                </button>
-                                            </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                        {loading ? (
+                            <div className="loading-state">
+                                <div className="spinner"></div>
+                                <p>Syncing requirements...</p>
                             </div>
-                        </div>
+                        ) : Object.entries(groupedRfqs).length > 0 ? (
+                            Object.entries(groupedRfqs).map(([partName, items]) => (
+                                <div key={partName} className="rfq-group-header-block">
+                                    <h5 className="group-title-styled">{partName}</h5>
+                                    <div className="group-variants-grid">
+                                        {items.map((r) => {
+                                            const pastDeadline = isPastDeadline(r.deadline);
+                                            const displayUnit = getDisplayUnit(r.part_name, r.unit);
+                                            return (
+                                                <div key={r.id} className="rfq-portal-card card glow">
+                                                    <div className="card-top">
+                                                        <div>
+                                                            <span className="mat-badge-lg">{r.part_name}</span>
+                                                            <span className="grade-sub">{r.material} / {r.size}</span>
+                                                        </div>
+                                                        <span className={`rfq-status-pill ${r.status === 'submitted' ? 'success' : ''}`}>
+                                                            {r.status === 'submitted' ? 'Quoted' : 'Awaiting'}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="card-details-portal">
+                                                        <div className="detail-item">
+                                                            <label><FaLayerGroup /> Size / Spec</label>
+                                                            <span>{r.size}</span>
+                                                        </div>
+                                                        <div className="detail-item">
+                                                            <label><FaDolly /> Quantity</label>
+                                                            <span>{Number(r.total_quantity).toFixed(2)} {displayUnit}</span>
+                                                        </div>
+                                                        <div className="detail-item">
+                                                            <label><FaClock /> Deadline</label>
+                                                            <span className={pastDeadline ? 'text-error' : ''}>
+                                                                {r.deadline ? new Date(r.deadline).toLocaleDateString() : 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="card-footer-portal">
+                                                        <button
+                                                            className={`btn ${r.status === 'submitted' ? 'btn-secondary' : 'btn-primary'} portal-btn-main`}
+                                                            disabled={pastDeadline}
+                                                            onClick={() => handleActionClick(r)}
+                                                        >
+                                                            {pastDeadline ? "Closed" : (r.status === 'submitted' ? "Edit & Resubmit" : "Submit Quotation")}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-state-portal card glass">
+                                <FaExclamationCircle className="empty-icon" />
+                                <h5>No active requirements found</h5>
+                                <p>You'll see new Quote Requests here soon.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -310,105 +349,193 @@ export function VendorPortal({ initialProjectId }) {
     }
 
     if (view === 'submission-form') {
+        const displayUnit = getDisplayUnit(selectedRfq.part_name, selectedRfq.unit);
         return (
             <div className="portal-form-wrapper">
-                <header className="portal-dash-header fixed-top">
+                <header className="portal-dash-header">
                     <div className="header-left">
-                        <button className="btn-back-portal" onClick={() => setView('dashboard')}>← Back to Dashboard</button>
+                        <button className="btn-back-portal" onClick={() => setView('dashboard')}>
+                            <FaArrowLeft /> Back to Dashboard
+                        </button>
                     </div>
                     <div className="header-right">
-                        <div className="header-project-badge mr-3">
-                            <span className="label">QUOTING FOR</span>
-                            <span className="value">{selectedRfq.material}</span>
+                        <h3>Quotation Hub</h3>
+                        <div className="deadline-timer">
+                            <FaClock /> Ends: {selectedRfq.deadline ? new Date(selectedRfq.deadline).toLocaleDateString() : 'TBD'}
                         </div>
-                        <span className="rfq-id-pill">RFQ ID: {selectedRfq.id}</span>
+                        <div className="header-project-badge">
+                            <span className="label">QUOTING FOR</span>
+                            <span className="value">{selectedRfq.part_name}</span>
+                        </div>
                     </div>
                 </header>
 
-                <div className="portal-scroll-container pt-header">
+                <div className="portal-scroll-container">
                     <div className="portal-form-container">
-                        <div className="form-wrapper shadow-2xl">
-                            <div className="form-hero-badge">
-                                <h3>Submit Quote Specification</h3>
-                                <div className="deadline-timer">
-                                    <FaClock /> Deadline: {new Date(selectedRfq.deadline).toLocaleDateString()}
-                                </div>
-                            </div>
+                        <div className="form-wrapper card">
 
                             <form className="quotation-submit-form" onSubmit={handleSubmitQuote}>
-                                <div className="form-grid-portal">
-                                    <div className="input-group">
-                                        <label>Part Number</label>
-                                        <input
-                                            type="text"
-                                            value={submission.part_number}
-                                            readOnly
-                                            className="form-control-readonly"
-                                        />
+                                <div className="form-layout-split">
+                                    {/* Left Card: Specifications */}
+                                    <div className="form-left">
+                                        <div className="form-section-title">
+                                            <FaProjectDiagram /> Item Specifications
+                                        </div>
+                                        
+                                        <div className="form-group-custom">
+                                            <label>Part / Category</label>
+                                            <input type="text" value={selectedRfq.part_name} readOnly />
+                                        </div>
+
+                                        <div className="form-grid-inner">
+                                            <div className="form-group-custom">
+                                                <label>Material Grade</label>
+                                                <input type="text" value={selectedRfq.material} readOnly />
+                                            </div>
+                                            <div className="form-group-custom">
+                                                <label>Size / Spec</label>
+                                                <input type="text" value={selectedRfq.size} readOnly />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-grid-inner">
+                                            <div className="form-group-custom">
+                                                <label>Required Quantity</label>
+                                                <input type="text" value={`${Number(selectedRfq.total_quantity).toFixed(2)} ${displayUnit}`} readOnly />
+                                            </div>
+                                            <div className="form-group-custom">
+                                                <label>Requirement Date</label>
+                                                <input type="text" value={selectedRfq.required_date || 'ASAP'} readOnly />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="input-group">
-                                        <label>Material Name</label>
-                                        <input
-                                            type="text"
-                                            value={submission.material_name}
-                                            readOnly
-                                            className="form-control-readonly"
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>Shipment From (Location)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Shanghai Warehouse"
-                                            value={submission.location}
-                                            onChange={(e) => setSubmission({ ...submission, location: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>Lead Time (Days)</label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. 15 days"
-                                            value={submission.lead_time}
-                                            onChange={(e) => setSubmission({ ...submission, lead_time: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>Supplying Quantity</label>
-                                        <input
-                                            type="number"
-                                            value={submission.count}
-                                            onChange={(e) => setSubmission({ ...submission, count: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label>Unit Price (USD)</label>
-                                        <input
-                                            type="number"
-                                            placeholder="0.00"
-                                            value={submission.price}
-                                            onChange={(e) => setSubmission({ ...submission, price: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="input-group full-width">
-                                        <label>Additional Notes</label>
-                                        <textarea
-                                            placeholder="Specific technical details or shipping terms..."
-                                            rows={3}
-                                            value={submission.notes}
-                                            onChange={(e) => setSubmission({ ...submission, notes: e.target.value })}
-                                        />
+
+                                    {/* Right Card: Your Quotation */}
+                                    <div className="form-right">
+                                        <div className="form-section-title">
+                                            <FaEnvelope /> Your Bid Details
+                                        </div>
+
+                                        <div className="form-grid-inner">
+                                            <div className="form-group-custom">
+                                                <label>Currency</label>
+                                                <select 
+                                                    className="form-control-custom"
+                                                    value={submission.currency}
+                                                    onChange={(e) => setSubmission({ ...submission, currency: e.target.value })}
+                                                >
+                                                    <option value="USD">USD ($)</option>
+                                                    <option value="INR">INR (₹)</option>
+                                                    <option value="EUR">EURO (€)</option>
+                                                </select>
+                                            </div>
+                                            <div className="form-group-custom">
+                                                <label>Price</label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    step="0.01"
+                                                    value={submission.price}
+                                                    onChange={(e) => setSubmission({ ...submission, price: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-grid-inner">
+                                            <div className="form-group-custom">
+                                                <label>Lead Time (Days)</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter days"
+                                                    value={submission.lead_time}
+                                                    onChange={(e) => setSubmission({ ...submission, lead_time: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="form-group-custom">
+                                                <label>Negotiation Range (%)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    placeholder="0"
+                                                    value={submission.negotiation_percentage}
+                                                    onChange={(e) => setSubmission({ ...submission, negotiation_percentage: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="address-section-nested">
+                                            <div className="form-group-custom">
+                                                <label>Dispatch Address</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Factory/Warehouse street address..."
+                                                    value={submission.shipment_address}
+                                                    onChange={(e) => setSubmission({ ...submission, shipment_address: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="form-grid-inner">
+                                                <div className="form-group-custom">
+                                                    <label>City</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="City"
+                                                        value={submission.city}
+                                                        onChange={(e) => setSubmission({ ...submission, city: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="form-group-custom">
+                                                    <label>State / Province</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="State"
+                                                        value={submission.state}
+                                                        onChange={(e) => setSubmission({ ...submission, state: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="form-group-custom">
+                                                <label>Country</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Country"
+                                                    value={submission.country}
+                                                    onChange={(e) => setSubmission({ ...submission, country: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="form-group-custom">
+                                            <label>Notes & Compliance Remarks</label>
+                                            <textarea
+                                                placeholder="Add details about lead time, certifications, or terms..."
+                                                rows={3}
+                                                value={submission.notes}
+                                                onChange={(e) => setSubmission({ ...submission, notes: e.target.value })}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div className="portal-form-footer-right">
-                                    <p className="footer-notice">This submission can be edited until the deadline.</p>
-                                    <button type="submit" className="btn btn-primary portal-btn-lg" disabled={submitting}>
-                                        {submitting ? <span className="spinner-border"></span> : <><FaCheckSquare /> Submit Final Quotation</>}
+                                    <div className="legal-notice">
+                                        <FaCheckSquare />
+                                        <span>By submitting, you confirm that pricing is valid for 30 days.</span>
+                                    </div>
+                                    <button type="submit" className="btn btn-primary btn-lg px-5 shadow-lg" disabled={submitting}>
+                                        {submitting ? (
+                                            <div className="spinner-border spinner-border-sm"></div>
+                                        ) : selectedRfq.status === 'submitted' ? (
+                                            'Update & Resubmit Quotation'
+                                        ) : (
+                                            'Confirm & Submit Quotation'
+                                        )}
                                     </button>
                                 </div>
                             </form>

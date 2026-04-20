@@ -1,4 +1,3 @@
-import { FaHome, FaIndustry, FaBoxOpen } from 'react-icons/fa'
 import './Footer.css'
 
 export function Footer({ currentView, onViewChange }) {
@@ -18,13 +17,6 @@ export function Footer({ currentView, onViewChange }) {
                 >
                     {/* <span className="nav-icon"><FaIndustry /></span> */}
                     <span className="nav-label">Vendor</span>
-                </button>
-                <button
-                    className={`nav-item ${currentView === 'material' ? 'active' : ''}`}
-                    onClick={() => onViewChange('material')}
-                >
-                    {/* <span className="nav-icon"><FaBoxOpen /></span> */}
-                    <span className="nav-label">Material</span>
                 </button>
             </nav>
         </footer>

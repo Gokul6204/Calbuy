@@ -6,9 +6,29 @@
 
 .bom-upload-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bom-upload-btn-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.bom-upload-btn-row .bom-upload-btn {
+  flex: 1;
+}
+
+.bom-upload-btn.secondary {
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  box-shadow: none;
+}
+
+.bom-upload-btn.secondary:hover:not(:disabled) {
+  background: var(--surface-soft);
+  color: var(--text-primary);
+  box-shadow: none;
 }
 
 .bom-upload-input-wrap {

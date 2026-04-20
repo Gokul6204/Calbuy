@@ -7,7 +7,7 @@
 }
 
 .app-header {
-  padding: 1.25rem 2rem;
+  padding: 1rem 2rem;
   border-bottom: 1px solid var(--border-light);
   display: flex;
   justify-content: space-between;
@@ -15,6 +15,9 @@
   background: var(--bg);
   z-index: 100;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  /* Allow wrapping on small screens */
+  gap: 1rem;
 }
 
 .header-logo {
@@ -270,98 +273,116 @@
 
 /* Project Specific Toolbar */
 .project-toolbar {
-    background: #f8fbff;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 0.75rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    z-index: 90;
-    animation: slideDown 0.3s ease-out;
+  background: var(--surface-0);
+  border-bottom: 1px solid var(--border-light);
+  padding: 0.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 90;
+  animation: slideDown 0.3s ease-out;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 @keyframes slideDown {
-    from { transform: translateY(-20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .toolbar-left {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .project-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding-right: 1.5rem;
-    border-right: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-right: 1.5rem;
+  border-right: 2px solid #e2e8f0;
 }
 
 .project-brand svg {
-    color: var(--accent);
-    font-size: 1.25rem;
+  color: var(--accent);
+  font-size: 1.25rem;
 }
 
 .project-brand span {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
 }
 
 .toolbar-nav {
-    display: flex;
-    gap: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  /* Enable scrolling for many buttons */
+  padding: 0.25rem 0;
+  scrollbar-width: none;
+  /* Hide scrollbar for clean look */
+}
+
+.toolbar-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .toolbar-btn {
-    background: transparent;
-    border: 1px solid transparent;
-    padding: 0.4rem 1rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #64748b;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
 }
 
 .toolbar-btn:hover {
-    background: #edf2f7;
-    color: #1e293b;
+  background: #edf2f7;
+  color: #1e293b;
 }
 
 .toolbar-btn.active {
-    background: white;
-    color: var(--accent);
-    border-color: var(--accent);
-    box-shadow: 0 2px 4px rgba(74, 105, 255, 0.1);
+  background: white;
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 4px rgba(74, 105, 255, 0.1);
 }
 
 .toolbar-right {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .btn-exit-project {
-    background: #fee2e2;
-    color: #ef4444;
-    border: none;
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    transition: all 0.2s;
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s;
 }
 
 .btn-exit-project:hover {
-    background: #fecaca;
+  background: #fecaca;
 }

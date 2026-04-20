@@ -31,7 +31,7 @@ class MultiTenantUpdateConsumer(AsyncWebsocketConsumer):
                 self.channel_name
             )
 
-    # Listen for messages from the company group
+    # Listen for messages from the company Group
     async def broadcast_update(self, event):
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
@@ -42,11 +42,6 @@ class MultiTenantUpdateConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def get_user_company_id(self, user):
-        # This logic should match your authentication/organization structure.
-        # Fallback to a default if not found or if the schema hasn't been updated yet.
-        # Once migration is done, this will return the actual user.company_id
-        try:
-            # Check if user has a profile with company_id, or direct field
-            return getattr(user, 'company_id', 1) # Defaulting to 1 for demonstration
-        except:
-            return 1
+        if user and user.is_authenticated:
+            return user.id
+        return 1

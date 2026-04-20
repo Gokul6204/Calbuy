@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { FaRobot, FaCheckCircle, FaStar, FaMapMarkerAlt, FaTruck, FaRegClock, FaCogs } from 'react-icons/fa'
 import { rankVendors, confirmVendor } from '../api/ai'
 import { FaRankingStar } from "react-icons/fa6";
+import { useNotification } from '../context/NotificationContext'
 import './VendorSelectionPage.css'
 
 export function VendorSelectionPage({ project, bomList: propBomList, setView }) {
@@ -10,8 +11,9 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
     const [rankedVendors, setRankedVendors] = useState([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
-    const [appliedWeights, setAppliedWeights] = useState({ price: 60, leadTime: 20, quantity: 20 })
-    const [pendingWeights, setPendingWeights] = useState({ price: 60, leadTime: 20, quantity: 20 })
+    const [appliedWeights, setAppliedWeights] = useState({ price: 40, leadTime: 30, distance: 30 })
+    const [pendingWeights, setPendingWeights] = useState({ price: 40, leadTime: 30, distance: 30 })
+    const { showAlert } = useNotification()
 
     useEffect(() => {
         if (!propBomList || propBomList.length === 0) {
@@ -33,26 +35,71 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
         }
     }, [selectedMaterial, appliedWeights])
 
-    const refreshMaterials = async () => {
+    const refreshMaterials = useCallback(async () => {
         if (!project?.id) return
         try {
             setLoading(true)
-            const res = await fetch(`/api/bom/?project_id=${project.id}`)
-            const data = await res.json()
-            setLocalBomList(data)
+            // 1. Fetch all quotations for the project to see which parts have bids
+            const qRes = await fetch(`/api/projects/${project.id}/quotations/`)
+            const quotations = await qRes.json()
+
+            const normalize = (val) => {
+                if (!val) return "";
+                return String(val).split(/\s+/).join("").toLowerCase();
+            }
+
+            // 2. Identify parts with at least 1 'Submitted' quotation
+            const submittedByPartKey = new Set()
+            quotations.forEach(q => {
+                if (q.status === 'Submitted') {
+                    const key = `${normalize(q.part_name)}|${normalize(q.size)}|${normalize(q.material)}`
+                    submittedByPartKey.add(key)
+                }
+            })
+
+            // 3. Fetch BOM items
+            let rawBom = propBomList || []
+            if (rawBom.length === 0) {
+                const bRes = await fetch(`/api/bom/?project_id=${project.id}`)
+                rawBom = await bRes.json()
+            }
+
+            // 4. Filter BOM items with robust normalization
+            const filteredBom = rawBom.filter(item => {
+                const itemKey = `${normalize(item.formatted_part || item.part)}|${normalize(item.size)}|${normalize(item.material)}`
+                return submittedByPartKey.has(itemKey)
+            })
+
+            setLocalBomList(filteredBom)
+
+            if (filteredBom.length > 0 && !selectedMaterial) {
+                setSelectedMaterial(filteredBom[0])
+            }
         } catch (err) {
             console.error("Failed to refresh materials:", err)
         } finally {
             setLoading(false)
         }
-    }
+    }, [project, propBomList, selectedMaterial])
+
+    useEffect(() => {
+        refreshMaterials()
+    }, [refreshMaterials])
 
     const handleRankVendors = async (currentWeights) => {
         if (!project?.id || !selectedMaterial?.id) return
         try {
             setLoading(true)
             setError(null)
-            const data = await rankVendors(project.id, selectedMaterial.id, currentWeights)
+
+            // Map keys for API compatibility
+            const apiWeights = {
+                price_weight: currentWeights.price,
+                lead_time_weight: currentWeights.leadTime,
+                distance_weight: currentWeights.distance
+            }
+
+            const data = await rankVendors(project.id, selectedMaterial.id, apiWeights)
             setRankedVendors(data)
         } catch (err) {
             console.error("Ranking failed:", err)
@@ -63,12 +110,12 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
     }
 
     const getNormalizedWeights = (weights) => {
-        const total = weights.price + weights.leadTime + weights.quantity;
-        if (total === 0) return { price: 33.3, leadTime: 33.3, quantity: 33.3 };
+        const total = weights.price + weights.leadTime + weights.distance;
+        if (total === 0) return { price: 33.3, leadTime: 33.3, distance: 33.4 };
         return {
             price: (weights.price / total) * 100,
             leadTime: (weights.leadTime / total) * 100,
-            quantity: (weights.quantity / total) * 100
+            distance: (weights.distance / total) * 100
         };
     };
 
@@ -83,7 +130,7 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
     }
 
     const handleResetWeights = () => {
-        const balanced = { price: 60, leadTime: 20, quantity: 20 }
+        const balanced = { price: 40, leadTime: 30, distance: 30 }
         setPendingWeights(balanced)
         setAppliedWeights(balanced)
     }
@@ -93,12 +140,12 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
         try {
             setLoading(true)
             await confirmVendor(project.id, selectedMaterial.id, quotationId)
-            alert("Vendor Confirmed Successfully!")
+            showAlert("Vendor Confirmed Successfully!", "success")
             if (setView) setView('purchase-order')
             else window.location.reload()
         } catch (err) {
             console.error("Confirmation failed:", err)
-            alert("Failed to confirm vendor: " + err.message)
+            showAlert("Failed to confirm vendor: " + err.message, "error")
         } finally {
             setLoading(false)
         }
@@ -126,8 +173,11 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
                                 className={`sidebar-item ${selectedMaterial?.id === item.id ? 'active' : ''}`}
                                 onClick={() => setSelectedMaterial(item)}
                             >
-                                <span className="item-name">{item.material}</span>
-                                <span className="item-qty">{Number(item.quantity).toFixed(2)} Units</span>
+                                <div className="sidebar-item-content">
+                                    <span className="item-name">{item.formatted_part || item.part || item.part_number || 'Unknown Part'}</span>
+                                    <span className="item-sub-spec">{item.size} | {item.material}</span>
+                                    <span className="item-qty">{Number(item.quantity).toFixed(2)} Units</span>
+                                </div>
                             </button>
                         ))}
                     </div>
@@ -152,16 +202,16 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
                         </div>
                         <div className="weight-sliders">
                             <div className="weight-group">
-                                <label>Best Price <span className="normalized-badge">{normPending.price.toFixed(1)}%</span></label>
+                                <label>Price Priority <span className="normalized-badge">{normPending.price.toFixed(1)}%</span></label>
                                 <input type="range" min="0" max="100" value={pendingWeights.price} onChange={(e) => updateWeight('price', e.target.value)} />
                             </div>
                             <div className="weight-group">
-                                <label>Best Lead Time <span className="normalized-badge">{normPending.leadTime.toFixed(1)}%</span></label>
+                                <label>Lead Time Priority <span className="normalized-badge">{normPending.leadTime.toFixed(1)}%</span></label>
                                 <input type="range" min="0" max="100" value={pendingWeights.leadTime} onChange={(e) => updateWeight('leadTime', e.target.value)} />
                             </div>
                             <div className="weight-group">
-                                <label>Best Quantity <span className="normalized-badge">{normPending.quantity.toFixed(1)}%</span></label>
-                                <input type="range" min="0" max="100" value={pendingWeights.quantity} onChange={(e) => updateWeight('quantity', e.target.value)} />
+                                <label>Proximity Priority <span className="normalized-badge">{normPending.distance.toFixed(1)}%</span></label>
+                                <input type="range" min="0" max="100" value={pendingWeights.distance} onChange={(e) => updateWeight('distance', e.target.value)} />
                             </div>
                         </div>
                     </div>
@@ -190,7 +240,7 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
                     ) : (
                         <div className="rankings-list">
                             <div className="results-header">
-                                <h3>AI Recommendations for {selectedMaterial?.material}</h3>
+                                <h3>AI Recommendations for {selectedMaterial?.formatted_part || selectedMaterial?.material}</h3>
                                 <span className="count-badge">{rankedVendors.length} Quotes Analyzed</span>
                             </div>
 
@@ -222,7 +272,7 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
                                                         stroke="#4f46e5"
                                                         strokeWidth="4"
                                                         strokeDasharray={`${2 * Math.PI * 26}`}
-                                                        strokeDashoffset={`${2 * Math.PI * 26 * (1 - (vendor.ai_score || 0))}`}
+                                                        strokeDashoffset={`${2 * Math.PI * 26 * (1 - (vendor.ai_score || 0) / 100)}`}
                                                         strokeLinecap="round"
                                                         fill="transparent"
                                                         r="26"
@@ -231,7 +281,7 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
                                                     />
                                                 </svg>
                                                 <div className="score-content">
-                                                    <div className="score-val">{((vendor.ai_score || 0) * 100).toFixed(0)}%</div>
+                                                    <div className="score-val">{(vendor.ai_score || 0).toFixed(0)}%</div>
                                                     <div className="score-label">MATCH</div>
                                                 </div>
                                             </div>
@@ -239,20 +289,20 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
 
                                         <div className="metrics-grid">
                                             <div className="metric">
-                                                <label>Unit Price</label>
-                                                <div className="val highlight">${vendor.unit_price?.toLocaleString()}</div>
+                                                <label>Total Price</label>
+                                                <div className="val">${vendor.unit_price?.toLocaleString()}</div>
                                             </div>
                                             <div className="metric">
-                                                <label>Total Price</label>
-                                                <div className="val">${vendor.total_price?.toLocaleString()}</div>
+                                                <label>Negotiation %</label>
+                                                <div className="val">{parseFloat(vendor.negotiation_percentage || 0).toFixed(1)}%</div>
                                             </div>
                                             <div className="metric">
                                                 <label>Lead Time</label>
                                                 <div className="val"><FaTruck /> {vendor.lead_time_days} Days</div>
                                             </div>
                                             <div className="metric">
-                                                <label>Availability</label>
-                                                <div className="val">{vendor.supplying_quantity?.toLocaleString()} Units</div>
+                                                <label>Travel Dist.</label>
+                                                <div className="val"><FaMapMarkerAlt /> {vendor.distance_to_organization_km ? `${parseFloat(vendor.distance_to_organization_km).toFixed(1)} km` : 'N/A'}</div>
                                             </div>
                                         </div>
 

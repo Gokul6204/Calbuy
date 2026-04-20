@@ -13,12 +13,12 @@ export const WebSocketProvider = ({ children }) => {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // Dynamically get the host (including port) and adjust if needed
         let host = window.location.host;
-        
+
         // If the frontend is on 5173 (Vite) and backend is on 8000
         if (host.includes('5173')) {
             host = host.replace('5173', '8000');
         }
-        
+
         const wsUrl = `${wsProtocol}//${host}/ws/updates/`;
 
         socketRef.current = new WebSocket(wsUrl);
@@ -31,7 +31,7 @@ export const WebSocketProvider = ({ children }) => {
         socketRef.current.onmessage = (event) => {
             const message = JSON.parse(event.data);
             const { type, data } = message;
-            
+
             // Dispatch to all listeners for this type
             if (listenersRef.current[type]) {
                 listenersRef.current[type].forEach(callback => callback(data));

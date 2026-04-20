@@ -32,6 +32,7 @@ export function VendorTable({ data, onEdit, onDelete, onManageMaterials, onToggl
                     <tr>
                         <th>Vendor ID</th>
                         <th>Vendor Name</th>
+                        <th>Category</th>
                         <th>Email</th>
                         <th>Phone Number</th>
                         <th>Location<span className='info-icon w-6 h-6' title="Click/hover the location to reveal full address"><CiCircleInfo /></span></th>
@@ -44,22 +45,22 @@ export function VendorTable({ data, onEdit, onDelete, onManageMaterials, onToggl
                         <tr key={vendor.id} className={!vendor.is_active ? 'row-inactive' : ''}>
                             <td className="font-mono">{vendor.vendor_id}</td>
                             <td className="font-semibold">{vendor.vendor_name}</td>
+                            <td>{vendor.category || '—'}</td>
                             <td>{vendor.email}</td>
                             <td>{vendor.mobile_number}</td>
-                            <td className="location-cell" 
+                            <td className="location-cell"
                                 onMouseEnter={() => setActivePopoverId(vendor.id)}
                                 onMouseLeave={() => setActivePopoverId(null)}
                             >
                                 <div className="location-wrapper" onClick={() => setActivePopoverId(activePopoverId === vendor.id ? null : vendor.id)}>
-                                    <span>{vendor.location}</span>
-
+                                    <span>{vendor.city + "," + vendor.state}</span>
                                 </div>
                                 {activePopoverId === vendor.id && (
                                     <div className="address-popover" onClick={(e) => e.stopPropagation()}>
                                         <div className="popover-arrow"></div>
                                         <div className="popover-inner">
                                             <span className="popover-label">Full Address</span>
-                                            <p className="popover-text">{vendor.address || "Address not provided"}</p>
+                                            <p className="popover-text">{vendor.address + ", " + vendor.city + ", " + vendor.state + ", " + vendor.country || "Address not provided"}</p>
                                         </div>
                                     </div>
                                 )}

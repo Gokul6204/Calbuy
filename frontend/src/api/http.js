@@ -1,3 +1,5 @@
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 export function getCookie(name) {
   const value = `; ${document.cookie}`
   const parts = value.split(`; ${name}=`)
@@ -6,7 +8,7 @@ export function getCookie(name) {
 }
 
 export async function ensureCsrfCookie() {
-  await fetch('/api/accounts/csrf/', {
+  await fetch(`${API_BASE}/api/accounts/csrf/`, {
     method: 'GET',
     credentials: 'include',
   })

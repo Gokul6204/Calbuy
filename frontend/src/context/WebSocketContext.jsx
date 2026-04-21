@@ -13,9 +13,16 @@ export const WebSocketProvider = ({ children }) => {
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         // Dynamically get the host (including port) and adjust if needed
         let host = window.location.host;
+        const apiBase = import.meta.env.VITE_API_URL;
 
-        // If the frontend is on 5173 (Vite) and backend is on 8000
-        if (host.includes('5173')) {
+        if (apiBase) {
+            try {
+                const url = new URL(apiBase);
+                host = url.host;
+            } catch (e) {
+                host = apiBase.replace(/^https?:\/\//, '');
+            }
+        } else if (host.includes('5173')) {
             host = host.replace('5173', '8000');
         }
 

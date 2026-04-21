@@ -99,3 +99,34 @@ Calby(1)/
 ## Security note
 
 The default Django `SECRET_KEY` and DB password are for development. For production, use environment variables and a strong secret key.
+
+## Hosting & Deployment
+
+This project is configured for deployment using **Vercel** (Frontend), **Render** (Backend), and **Supabase** (Database).
+
+### 1. Database (Supabase)
+1. Create a new project on [Supabase](https://supabase.com/).
+2. Go to **Project Settings > Database** and copy the **Connection string** (URI).
+3. It should look like `postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres`.
+
+### 2. Backend (Render)
+1. Create a new **Web Service** on [Render](https://render.com/).
+2. Connect your GitHub repository.
+3. Set the **Root Directory** to `backend`.
+4. **Environment Variables**:
+   - `DATABASE_URL`: Your Supabase connection string.
+   - `DJANGO_SETTINGS_MODULE`: `Calbuy_procurement.settings`
+   - `SECRET_KEY`: A random long string.
+   - `ALLOWED_HOSTS`: `your-app-name.onrender.com`
+   - `PYTHON_VERSION`: `3.10.0` (or your preferred version)
+5. **Build Command**: `./build.sh`
+6. **Start Command**: `daphne -b 0.0.0.0 -p $PORT Calbuy_procurement.asgi:application`
+   - *Note: Using Daphne for both HTTP and WebSockets.*
+
+### 3. Frontend (Vercel)
+1. Create a new project on [Vercel](https://vercel.com/).
+2. Connect your GitHub repository.
+3. Set the **Root Directory** to `frontend`.
+4. **Environment Variables**:
+   - `VITE_API_URL`: `https://your-app-name.onrender.com` (Your Render URL)
+5. Vercel will automatically detect Vite and build the project.

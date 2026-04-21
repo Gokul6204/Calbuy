@@ -1,4 +1,4 @@
-const API_BASE = '/api/ai'
+const API_BASE = (import.meta.env.VITE_API_URL || '') + '/api/ai'
 
 async function handleResponse(res) {
     const text = await res.text()

@@ -12,6 +12,7 @@ class RegistrationSerializer(serializers.Serializer):
     city = serializers.CharField(max_length=100)
     state = serializers.CharField(max_length=100)
     country = serializers.CharField(max_length=100)
+    pincode = serializers.CharField(max_length=20, required=False, allow_blank=True)
     phone_number = serializers.CharField(max_length=20)
     latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
     longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
@@ -23,7 +24,8 @@ class RegistrationSerializer(serializers.Serializer):
                 data.get('address', ''),
                 data.get('city', ''),
                 data.get('state', ''),
-                data.get('country', '')
+                data.get('country', ''),
+                data.get('pincode', '')
             )
             data['latitude'] = lat
             data['longitude'] = lng
@@ -43,21 +45,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = [
             'organization_name', 'mail_id', 'address', 'city', 'state', 
-            'country', 'phone_number', 'latitude', 'longitude', 'email'
+            'country', 'pincode', 'phone_number', 'latitude', 'longitude', 'email'
         ]
         read_only_fields = ['latitude', 'longitude']
 
     def validate(self, data):
         # If any location field is changing, re-fetch coordinates
-        address_fields = ['address', 'city', 'state', 'country']
+        address_fields = ['address', 'city', 'state', 'country', 'pincode']
         if any(field in data for field in address_fields):
             address = data.get('address', self.instance.address if self.instance else '')
             city = data.get('city', self.instance.city if self.instance else '')
             state = data.get('state', self.instance.state if self.instance else '')
             country = data.get('country', self.instance.country if self.instance else '')
+            pincode = data.get('pincode', self.instance.pincode if self.instance else '')
             
             try:
-                lat, lng = get_geocode(address, city, state, country)
+                lat, lng = get_geocode(address, city, state, country, pincode)
                 data['latitude'] = lat
                 data['longitude'] = lng
             except Exception as e:

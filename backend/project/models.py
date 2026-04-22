@@ -1,7 +1,8 @@
 from django.db import models
 
 class Project(models.Model):
-    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID
+    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID (Legacy)
+    organization = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -27,7 +28,8 @@ class ProjectVendorAccess(models.Model):
         unique_together = ('project', 'vendor_email')
 
 class Quotation(models.Model):
-    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID
+    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID (Legacy)
+    organization = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     vendor_id = models.CharField(max_length=50) # Link by business ID
     bom_item_id = models.IntegerField(null=True, blank=True) # FK to BOMRecord
@@ -49,6 +51,7 @@ class Quotation(models.Model):
     city = models.CharField(max_length=100, null=True, blank=True)
     state = models.CharField(max_length=100, null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
+    pincode = models.CharField(max_length=20, null=True, blank=True)
     
     # Geocoding and distance
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)

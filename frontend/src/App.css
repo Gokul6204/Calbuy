@@ -7,16 +7,17 @@
 }
 
 .app-header {
-  padding: 1rem 2rem;
-  border-bottom: 1px solid var(--border-light);
+  padding: 0.75rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--bg);
   z-index: 100;
   flex-shrink: 0;
   flex-wrap: wrap;
-  /* Allow wrapping on small screens */
+  background: linear-gradient(10deg, #ffffff 0%,  #d6b2ffb4 25%,  #ba8fffab 50%,  #8438ffb9 75%,  #7134ffb7 100%);
+  /* background: rgba(199, 199, 255, 0.507); */
+  border-bottom: 1px solid rgba(74, 105, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
   gap: 1rem;
 }
 
@@ -47,7 +48,7 @@
   font-weight: 800;
   margin: 0;
   line-height: 1.1;
-  background: linear-gradient(135deg, #4a69ff 0%, #d8deff 100%);
+  background: linear-gradient(135deg, #3a3f58 10%, #4c3cd8 80%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -95,7 +96,7 @@
 
 .nav-btn.active {
   color: white;
-  background: var(--accent);
+  background: linear-gradient(135deg, #a388ff 0%, #8d53ff 100%) !important;
   box-shadow: var(--shadow-sm);
 }
 
@@ -131,11 +132,13 @@
 }
 
 .section {
-  background: var(--surface-1);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  box-shadow: var(--shadow-sm);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 .section h2 {
@@ -272,10 +275,31 @@
 }
 
 /* Project Specific Toolbar */
+/* Project Specific Toolbar - Glossy / Glassmorphism */
 .project-toolbar {
-  background: var(--surface-0);
-  border-bottom: 1px solid var(--border-light);
-  padding: 0.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+
+
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, 0.22) 0%,
+    rgba(124, 58, 237, 0.18) 50%,
+    rgba(167, 139, 250, 0.14) 100%
+  );
+
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+
+  box-shadow:
+    0 8px 24px rgba(31, 41, 55, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+
+  padding: 0.75rem 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -283,6 +307,75 @@
   animation: slideDown 0.3s ease-out;
   flex-wrap: wrap;
   gap: 1rem;
+
+  border-radius: 16px;
+  margin: 10px 12px;
+  transition: all 0.3s ease;
+}
+
+/* Top glossy shine */
+.project-toolbar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 52%;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.14) 35%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Soft side glow */
+.project-toolbar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.18), transparent 30%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 28%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Make inner content stay above glossy layers */
+.project-toolbar > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Hover effect */
+.project-toolbar:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 30px rgba(79, 70, 229, 0.12),
+    0 6px 18px rgba(31, 41, 55, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Optional if toolbar contains buttons */
+.project-toolbar button,
+.project-toolbar .toolbar-btn {
+  position: relative;
+  z-index: 2;
+}
+
+/* Slide animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideDown {
@@ -324,12 +417,15 @@
 
 .toolbar-nav {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 1rem;
   overflow-x: auto;
-  /* Enable scrolling for many buttons */
-  padding: 0.25rem 0;
+  padding: 0.5rem;
   scrollbar-width: none;
-  /* Hide scrollbar for clean look */
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
 }
 
 .toolbar-nav::-webkit-scrollbar {
@@ -338,29 +434,41 @@
 
 .toolbar-btn {
   background: transparent;
-  border: 1px solid transparent;
-  padding: 0.4rem 1rem;
-  border-radius: 20px;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
+  font-weight: 500;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   transition: all 0.2s ease;
+  position: relative;
+}
+
+/* Step Separator Chevron */
+.toolbar-btn:not(:last-child)::after {
+  content: '\203A'; /* right chevron */
+  position: absolute;
+  right: -0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 .toolbar-btn:hover {
-  background: #edf2f7;
-  color: #1e293b;
+  background: var(--surface-2);
+  color: var(--text-primary);
 }
 
 .toolbar-btn.active {
-  background: white;
-  color: var(--accent);
-  border-color: var(--accent);
-  box-shadow: 0 2px 4px rgba(74, 105, 255, 0.1);
+  background: var(--accent-gradient, var(--accent));
+  color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
 }
 
 .toolbar-right {

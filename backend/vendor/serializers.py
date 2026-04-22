@@ -9,14 +9,14 @@ class VendorDetailsSerializer(serializers.ModelSerializer):
         fields = [
             "id", "company_id", "vendor_id", "vendor_name", 
             "mobile_number", "email", "address", "city", 
-            "state", "country", "latitude", "longitude", 
+            "state", "country", "pincode", "latitude", "longitude", 
             "category", "is_active", "created_at"
         ]
         read_only_fields = ["id", "company_id", "created_at", "latitude", "longitude"]
 
     def validate(self, data):
         # Trigger geocoding when address fields change or on creation
-        address_fields = ['address', 'city', 'state', 'country']
+        address_fields = ['address', 'city', 'state', 'country', 'pincode']
         
         # Check if we are creating or updating address fields
         if not self.instance or any(field in data for field in address_fields):
@@ -24,9 +24,10 @@ class VendorDetailsSerializer(serializers.ModelSerializer):
             city = data.get('city', self.instance.city if self.instance else '')
             state = data.get('state', self.instance.state if self.instance else '')
             country = data.get('country', self.instance.country if self.instance else '')
+            pincode = data.get('pincode', self.instance.pincode if self.instance else '')
 
             try:
-                lat, lng = get_geocode(address, city, state, country)
+                lat, lng = get_geocode(address, city, state, country, pincode)
                 data['latitude'] = lat
                 data['longitude'] = lng
             except ValueError as e:

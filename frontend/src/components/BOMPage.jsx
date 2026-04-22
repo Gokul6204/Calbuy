@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
+import { useAlert } from '../context/NotificationContext'
 import { BOMUpload } from './BOMUpload'
 import { BOMTable } from './BOMTable'
 import { AddMaterialModal } from './AddMaterialModal'
 import { bulkCreateBOM } from '../api/bom'
 import { matchVendors } from '../api/vendor'
-import { FaPlus, FaSearch, FaCloudUploadAlt, FaTools, FaTrash } from 'react-icons/fa'
+import { FaPlus, FaSearch, FaCloudUploadAlt, FaTools, FaTrash, FaBoxOpen, FaLayerGroup, FaTags, FaIndustry } from 'react-icons/fa'
 import './HomePage.css'
 
 /** Derive next BOM ID from existing list (e.g. BOM-001, BOM-002 -> BOM-003). */
@@ -21,11 +22,14 @@ function getNextBomId(bomList) {
 }
 
 export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setView }) {
+    const { showConfirm } = useAlert()
     const [findingVendors, setFindingVendors] = useState(false)
     const [savingToDB, setSavingToDB] = useState(false)
     const [error, setError] = useState(null)
     const [successMessage, setSuccessMessage] = useState(null)
     const [folderUploadTrigger, setFolderUploadTrigger] = useState(0)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [qtyTypeFilter, setQtyTypeFilter] = useState('all')
 
     const handleUploadSuccess = async (newRows) => {
         const updatedList = [...newRows, ...bomList]
@@ -106,15 +110,19 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
         }
     }
 
-    const handleClearList = async () => {
-        if (window.confirm('Clear all items from current list?')) {
-            setBomList([])
-            try {
-                await bulkCreateBOM([], project?.id)
-            } catch (e) {
-                console.error("Auto-save failed after clear", e)
-            }
-        }
+    const handleClearList = () => {
+        showConfirm(
+            'Are you sure you want to clear all items from the current list? This action cannot be undone.',
+            async () => {
+                setBomList([])
+                try {
+                    await bulkCreateBOM([], project?.id)
+                } catch (e) {
+                    console.error("Auto-save failed after clear", e)
+                }
+            },
+            'delete'
+        )
     }
 
     const suggestedBomId = useMemo(() => getNextBomId(bomList), [bomList])
@@ -124,15 +132,29 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
         setFindingVendors(true)
         try {
             const categories = [...new Set(bomList.map(item => (item.category || '').trim()))].filter(Boolean)
-            const result = await matchVendors({ categories })
+            const materials = [...new Set(bomList.map(item => (item.part || '').trim()))].filter(Boolean)
+            const result = await matchVendors({ categories, materials })
             setMatchedVendors(result)
             setView('matching-vendor')
         } catch (e) {
-            setError('Failed to find matching vendors')
+            console.error("matchVendors error:", e)
+            setError('Failed to find matching vendors: ' + (e.message || 'Unknown error'))
         } finally {
             setFindingVendors(false)
         }
     }
+
+    const filteredBOM = useMemo(() => {
+        return bomList.filter(item => {
+            const matchesSearch = (item.formatted_part || item.part || item.part_number || '').toLowerCase().includes(searchTerm.toLowerCase())
+            const matchesQtyType = qtyTypeFilter === 'all' || item.quantity_type === qtyTypeFilter
+            return matchesSearch && matchesQtyType
+        })
+    }, [bomList, searchTerm, qtyTypeFilter])
+
+    const qtyTypes = useMemo(() => {
+        return ['all', ...new Set(bomList.map(item => item.quantity_type).filter(Boolean))]
+    }, [bomList])
 
     return (
         <div className="view-container">
@@ -166,14 +188,14 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
                         <div className="sidebar-buttons">
                             <button
                                 type="button"
-                                className="btn btn-primary"
+                                className="btn btn-gradient-primary w-full"
                                 onClick={() => setAddMaterialOpen(true)}
                             >
                                 <FaPlus /> Add Material
                             </button>
                             <button
                                 type="button"
-                                className="btn btn-secondary"
+                                className="btn btn-soft-blue w-full"
                                 onClick={handleGetVendors}
                                 disabled={findingVendors || bomList.length === 0}
                             >
@@ -182,7 +204,7 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
                             </button>
                             <button
                                 type="button"
-                                className="btn btn-outline-danger"
+                                className="btn btn-light-red w-full"
                                 onClick={handleClearList}
                                 disabled={bomList.length === 0}
                             >
@@ -205,14 +227,72 @@ export function BOMPage({ project, bomList, setBomList, setMatchedVendors, setVi
 
                 <main className="home-main-content">
                     <>
+                        {/* <div className="dashboard-summary">
+                            <div className="stat-card">
+                                <div className="stat-icon bg-indigo-100 text-indigo-600"><FaBoxOpen /></div>
+                                <div className="stat-info">
+                                    <span className="stat-value">{bomList.length}</span>
+                                    <span className="stat-label">Total Parts</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-icon bg-purple-100 text-purple-600"><FaLayerGroup /></div>
+                                <div className="stat-info">
+                                    <span className="stat-value">{bomList.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0), 0).toFixed(0)}</span>
+                                    <span className="stat-label">Total Quantity</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-icon bg-emerald-100 text-emerald-600"><FaTags /></div>
+                                <div className="stat-info">
+                                    <span className="stat-value">{new Set(bomList.map(i => i.part).filter(Boolean)).size}</span>
+                                    <span className="stat-label">Unique Materials</span>
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-icon bg-amber-100 text-amber-600"><FaIndustry /></div>
+                                <div className="stat-info">
+                                    <span className="stat-value">{new Set(bomList.map(i => i.vendor_name).filter(Boolean)).size || 0}</span>
+                                    <span className="stat-label">Pending Vendors</span>
+                                </div>
+                            </div>
+                        </div> */}
+
                         <div className="table-container-header">
-                            <h2>BOM Records</h2>
-                            <span className="v-badge">{bomList.length} total items</span>
+                            <div className="header-left-side">
+                                <h2>BOM Records</h2>
+                                <span className="v-badge">{filteredBOM.length} items</span>
+                            </div>
+                            <div className="header-filters">
+                                <div className="filter-group">
+                                    <FaSearch className="filter-icon" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search part name..." 
+                                        className="filter-input"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+                                <div className="filter-group">
+                                    <select 
+                                        className="filter-select"
+                                        value={qtyTypeFilter}
+                                        onChange={(e) => setQtyTypeFilter(e.target.value)}
+                                    >
+                                        {qtyTypes.map(type => (
+                                            <option key={type} value={type}>
+                                                {type === 'all' ? 'All Types' : type.charAt(0).toUpperCase() + type.slice(1)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="table-view-inner">
                             <BOMTable
-                                data={bomList}
+                                data={filteredBOM}
                                 onEdit={(row) => setEditingRecord(row)}
                                 onDelete={handleDelete}
                             />

@@ -254,7 +254,7 @@ export function VendorSelectionPage({ project, bomList: propBomList, setView }) 
                                         <div className="card-top">
                                             <div className="vendor-info">
                                                 <h4>{vendor.vendor_name} {index === 0 && <FaStar className="star-icon" />}</h4>
-                                                <span className="location-tag"><FaMapMarkerAlt /> {vendor.shipment_from_location}</span>
+                                                {/* <span className="location-tag"><FaMapMarkerAlt /> {vendor.shipment_from_location}</span> */}
                                             </div>
                                             <div className="ai-score-ring">
                                                 <svg className="progress-ring" width="60" height="60">

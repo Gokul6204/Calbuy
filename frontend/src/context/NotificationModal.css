@@ -124,3 +124,75 @@
         transform: translateY(0) scale(1);
     }
 }
+
+/* ── Delete Confirmation Variant ── */
+.notification-modal.delete-type {
+    border-left-color: #EF4444;
+}
+
+.delete-type .notification-icon {
+    color: #EF4444;
+}
+
+.confirm-title {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+/* ── Confirm Footer Buttons ── */
+.btn-cancel {
+    background: #F1F5F9;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+    padding: 0.625rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.btn-cancel:hover {
+    background: #E2E8F0;
+    transform: translateY(-1px);
+}
+
+.btn-confirm {
+    border: none;
+    padding: 0.625rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    color: #fff;
+}
+
+.btn-confirm-primary {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.btn-confirm-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+.btn-confirm-danger {
+    background: linear-gradient(135deg, #EF4444, #DC2626);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+.btn-confirm-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.confirm-type .notification-content p {
+    color: #4B5563;
+    font-weight: 400;
+    font-size: 0.95rem;
+}

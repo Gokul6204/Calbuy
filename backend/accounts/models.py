@@ -9,6 +9,7 @@ class UserProfile(models.Model):
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100, blank=True)
+    pincode = models.CharField(max_length=20, blank=True)
     full_address = models.TextField(blank=True, help_text="Combined address, city, state, country")
     phone_number = models.CharField(max_length=20)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -23,6 +24,7 @@ class UserProfile(models.Model):
                 if (old_instance.address != self.address or 
                     old_instance.city != self.city or 
                     old_instance.state != self.state or 
+                    old_instance.pincode != self.pincode or 
                     old_instance.country != self.country):
                     re_geocode = True
             except UserProfile.DoesNotExist:
@@ -31,7 +33,7 @@ class UserProfile(models.Model):
             re_geocode = True
 
         # 2. Update the full_address helper field
-        parts = [self.address, self.city, self.state, self.country]
+        parts = [self.address, self.city, self.state, self.pincode, self.country]
         self.full_address = ", ".join([str(p).strip() for p in parts if p and str(p).strip()])
         
         # 3. If location changed or is new, fetch fresh coordinates
@@ -42,7 +44,8 @@ class UserProfile(models.Model):
                     self.address or '', 
                     self.city or '', 
                     self.state or '', 
-                    self.country or ''
+                    self.country or '',
+                    self.pincode or ''
                 )
                 if lat and lon:
                     self.latitude = lat

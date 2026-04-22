@@ -43,5 +43,12 @@ class MultiTenantUpdateConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_user_company_id(self, user):
         if user and user.is_authenticated:
-            return user.id
-        return 1
+            try:
+                org = user.profile.organization_name
+                if org:
+                    import re
+                    return re.sub(r'[^a-zA-Z0-9_]', '_', str(org)).lower()
+            except:
+                pass
+            return str(user.id)
+        return "default"

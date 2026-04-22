@@ -11,6 +11,7 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
     const [city, setCity] = useState('')
     const [state, setState] = useState('')
     const [country, setCountry] = useState('')
+    const [pincode, setPincode] = useState('')
     const [address, setAddress] = useState('')
     const [category, setCategory] = useState('')
     const [saving, setSaving] = useState(false)
@@ -28,6 +29,7 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                 setCity(initialData.city ?? '')
                 setState(initialData.state ?? '')
                 setCountry(initialData.country ?? '')
+                setPincode(initialData.pincode ?? '')
                 setAddress(initialData.address ?? '')
                 setCategory(initialData.category ?? '')
             } else {
@@ -38,6 +40,7 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                 setCity('')
                 setState('')
                 setCountry('')
+                setPincode('')
                 setAddress('')
                 setCategory('')
             }
@@ -75,6 +78,7 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                 city: city.trim(),
                 state: state.trim(),
                 country: country.trim(),
+                pincode: pincode.trim(),
                 address: address.trim(),
                 category: category.trim(),
             }
@@ -201,6 +205,16 @@ export function AddVendorModal({ open, onClose, onSuccess, initialData = null })
                                 value={country}
                                 onChange={(e) => setCountry(e.target.value)}
                                 placeholder="e.g. India"
+                                required
+                            />
+                        </div>
+                        <div className="input-group">
+                            <label>Pincode <span className="required-star">*</span></label>
+                            <input
+                                type="text"
+                                value={pincode}
+                                onChange={(e) => setPincode(e.target.value)}
+                                placeholder="e.g. 600001"
                                 required
                             />
                         </div>

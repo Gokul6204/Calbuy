@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { FaSearch, FaTimes, FaMapMarkerAlt, FaPaperPlane, FaChevronDown, FaBoxOpen, FaCheckCircle } from 'react-icons/fa'
+import { ImSearch } from "react-icons/im";
 import { useAlert } from '../context/NotificationContext'
 import './MatchingVendorsPanel.css'
 
@@ -255,7 +256,7 @@ export function MatchingVendorsPanel({ vendors, bomList = [], quotations = [], o
                     </div>
                 ) : filteredVendors.length === 0 ? (
                     <div className="empty-results">
-                        <div className="empty-icon">🔍</div>
+                        <div className="empty-icon"><ImSearch /></div>
                         <p>No vendors match the selected filters.</p>
                         <button className="btn btn-secondary mt-3" onClick={() => { setLocationFilter(''); setSelectedMaterials([]) }}>
                             Clear All Filters

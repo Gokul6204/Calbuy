@@ -10,8 +10,12 @@ def broadcast_company_event(company_id, action_type, payload, sender_id=None):
         channel_layer = get_channel_layer()
         if not channel_layer: return
         
+        # Sanitize organization name for group name (alphanumeric and underscores only)
+        import re
+        group_id = re.sub(r'[^a-zA-Z0-9_]', '_', str(company_id or "default")).lower()
+        
         async_to_sync(channel_layer.group_send)(
-            f"company_{company_id}",
+            f"company_{group_id}",
             {
                 "type": "broadcast_update",
                 "action_type": action_type,

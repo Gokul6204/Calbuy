@@ -14,6 +14,7 @@ export function ProfilePage() {
         city: '',
         state: '',
         country: '',
+        pincode: '',
         email: '',
         phone_number: ''
     });
@@ -29,11 +30,21 @@ export function ProfilePage() {
                 city: user.city || '',
                 state: user.state || '',
                 country: user.country || '',
+                pincode: user.pincode || '',
                 email: user.email || '',
                 phone_number: user.phone_number || ''
             });
         }
     }, [user]);
+
+    useEffect(() => {
+        if (message.text) {
+            const timer = setTimeout(() => {
+                setMessage({ type: '', text: '' });
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [message]);
 
 
     const handleChange = (e) => {
@@ -64,7 +75,17 @@ export function ProfilePage() {
                 setMessage({ type: 'success', text: 'Profile updated successfully!' });
             } else {
                 const data = await response.json();
-                setMessage({ type: 'error', text: data.error || 'Failed to update profile.' });
+                let errorMsg = 'Failed to update profile.';
+                if (data.error) {
+                    errorMsg = data.error;
+                } else if (typeof data === 'object') {
+                    // Extract first error from field errors
+                    const firstField = Object.keys(data)[0];
+                    if (firstField && Array.isArray(data[firstField])) {
+                        errorMsg = `${firstField}: ${data[firstField][0]}`;
+                    }
+                }
+                setMessage({ type: 'error', text: errorMsg });
             }
         } catch (err) {
             setMessage({ type: 'error', text: 'Something went wrong. Please try again.' });
@@ -86,7 +107,7 @@ export function ProfilePage() {
                 </div>
 
                 {message.text && (
-                    <div className={`profile-message ${message.type}`}>
+                    <div className={`profile-floating-message ${message.type}`}>
                         {message.text}
                     </div>
                 )}
@@ -147,7 +168,7 @@ export function ProfilePage() {
                                 )}
                             </div>
 
-                            <div className="form-row">
+                            <div className="form-row-pincode">
                                 <div className="form-item">
                                     <label>City</label>
                                     {isEditing ? (
@@ -187,24 +208,24 @@ export function ProfilePage() {
                                         <p>{user.country}</p>
                                     )}
                                 </div>
+                                <div className="form-item">
+                                    <label>Pincode</label>
+                                    {isEditing ? (
+                                        <input
+                                            name="pincode"
+                                            value={formData.pincode}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    ) : (
+                                        <p>{user.pincode || 'Not specified'}</p>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="form-item">
-                                <label><FaEnvelope /> Login Email</label>
-                                {isEditing ? (
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                ) : (
-                                    <p>{user.email}</p>
-                                )}
-                            </div>
 
-                            <div className="form-item">
+
+                            <div className="form-item full-width">
                                 <label><FaPhone /> Phone Number</label>
                                 {isEditing ? (
                                     <input
@@ -212,6 +233,8 @@ export function ProfilePage() {
                                         value={formData.phone_number}
                                         onChange={handleChange}
                                         required
+                                        maxLength={10}
+                                        minLength={10}                        
                                     />
                                 ) : (
                                     <p>{user.phone_number}</p>

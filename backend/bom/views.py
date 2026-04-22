@@ -105,13 +105,21 @@ class BOMBulkCreateView(APIView):
         if not items:
             return Response({"message": "BOM list cleared for project."}, status=status.HTTP_200_OK)
             
-        company_id = request.user.id if request.user.is_authenticated else 1
+        # Determine organization from user profile
+        org_name = None
+        try:
+            org_name = request.user.profile.organization_name
+        except:
+            pass
+
+        if not org_name:
+            org_name = request.user.username or f"User_{request.user.id}"
         created = []
         for row in items:
             row = _enrich_bom_data(row)
             obj = BOM.objects.create(
                 project=project,
-                company_id=company_id,
+                organization=org_name,
                 part_number=row.get("part_number", ""),
                 part=row.get("part", ""),
                 part_name=row.get("part_name", ""),
@@ -138,8 +146,20 @@ class BOMListView(APIView):
     """List all BOM entries (GET) or create a single BOM record (POST)."""
 
     def get(self, request):
-        company_id = request.user.id if request.user.is_authenticated else 1
-        qs = BOM.objects.filter(company_id=company_id)
+        if not request.user.is_authenticated:
+            return Response([])
+            
+        org = None
+        try:
+            org = request.user.profile.organization_name
+        except:
+            pass
+            
+        if not org:
+            org = request.user.username or f"User_{request.user.id}"
+            
+        qs = BOM.objects.filter(organization__iexact=org.strip())
+            
         project_id = request.query_params.get("project_id")
         if project_id:
             qs = qs.filter(project_id=project_id)
@@ -201,10 +221,18 @@ class BOMListView(APIView):
                     break
                 except (ValueError, TypeError):
                     continue
-        company_id = request.user.id if request.user.is_authenticated else 1
+        # Determine organization from user profile
+        org_name = None
+        try:
+            org_name = request.user.profile.organization_name
+        except:
+            pass
+
+        if not org_name:
+            org_name = request.user.username or f"User_{request.user.id}"
         data = _enrich_bom_data(data)
         obj = BOM.objects.create(
-            company_id=company_id,
+            organization=org_name,
             part_number=(data.get("part_number") or "").strip(),
             part=(data.get("part") or "").strip(),
             part_name=data.get("part_name", ""),

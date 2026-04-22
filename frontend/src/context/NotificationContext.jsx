@@ -17,8 +17,8 @@ export function NotificationProvider({ children }) {
         }
     }, [])
 
-    const showConfirm = useCallback((message, onConfirm) => {
-        setConfirmDialog({ message, onConfirm })
+    const showConfirm = useCallback((message, onConfirm, type = 'info') => {
+        setConfirmDialog({ message, onConfirm, type })
     }, [])
 
     const hideAlert = () => setAlert(null)
@@ -57,14 +57,17 @@ export function NotificationProvider({ children }) {
             {confirmDialog && (
                 <div className="notification-overlay" onClick={hideConfirm}>
                     <div 
-                        className={`notification-modal confirm-type`} 
+                        className={`notification-modal confirm-type ${confirmDialog.type === 'delete' ? 'delete-type' : ''}`} 
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="notification-header">
                             <div className="notification-icon">
-                                <FaInfoCircle />
+                                {confirmDialog.type === 'delete' ? <FaExclamationCircle /> : <FaInfoCircle />}
                             </div>
                             <div className="notification-content">
+                                {confirmDialog.type === 'delete' && (
+                                    <span className="confirm-title">Confirm Delete</span>
+                                )}
                                 <p>{confirmDialog.message}</p>
                             </div>
                             <button className="notification-close" onClick={hideConfirm}>
@@ -73,11 +76,13 @@ export function NotificationProvider({ children }) {
                         </div>
                         
                         <div className="notification-footer" style={{ gap: '10px' }}>
-                            <button className="btn-secondary" onClick={hideConfirm}>Cancel</button>
-                            <button className="btn-primary" onClick={() => {
+                            <button className="btn-cancel" onClick={hideConfirm}>Cancel</button>
+                            <button className={`btn-confirm ${confirmDialog.type === 'delete' ? 'btn-confirm-danger' : 'btn-confirm-primary'}`} onClick={() => {
                                 if (confirmDialog.onConfirm) confirmDialog.onConfirm()
                                 hideConfirm()
-                            }}>Confirm</button>
+                            }}>
+                                {confirmDialog.type === 'delete' ? 'Delete' : 'Confirm'}
+                            </button>
                         </div>
                     </div>
                 </div>

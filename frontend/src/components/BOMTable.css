@@ -35,20 +35,53 @@
   color: var(--text-primary);
 }
 
-.bom-table tbody tr {
-  transition: var(--transition);
+.bom-table tbody tr:nth-child(even) {
+  background-color: var(--surface-1);
 }
 
+.bom-table tbody tr:nth-child(odd) {
+  background-color: var(--surface-0);
+}
+
+.bom-table tbody tr {
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
 
 .bom-table tbody tr:hover {
-  background: var(--surface-soft);
+  background: var(--surface-2) !important;
+  transform: scale(1.002);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  z-index: 1;
+}
+
+.bom-table td.part-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .bom-table-qty {
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  color: var(--accent-light);
+  font-weight: 700;
+  color: var(--text-primary);
 }
+
+.badge-unit {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-unit.count { background: #E0E7FF; color: #4F46E5; }
+.badge-unit.area { background: #D1FAE5; color: #10B981; }
+.badge-unit.length { background: #FEF3C7; color: #D97706; }
+.badge-unit.weight { background: #FCE7F3; color: #DB2777; }
+.badge-unit.default { background: #F1F5F9; color: #64748B; }
 
 .bom-table-source {
   max-width: 200px;

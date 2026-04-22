@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { fetchVendorList, fetchVendorMaterials, createVendorMaterial, deleteVendorMaterial } from '../api/vendor'
-import { FaRegTrashAlt, FaSearch } from "react-icons/fa";
+import { FaRegTrashAlt, FaSearch, FaBoxOpen } from "react-icons/fa";
 import { AddMaterialModal } from './AddMaterialModal'
 import './MaterialManagementPage.css'
 
@@ -137,7 +137,7 @@ export function MaterialManagementPage() {
                 <main className="material-details-box">
                     {!selectedVendorId ? (
                         <div className="empty-notice">
-                            <div className="box-icon">📦</div>
+                            <div className="box-icon"><FaBoxOpen /></div>
                             <h3>Select a Vendor</h3>
                             <p>Choose a vendor from the list to manage their material mappings.</p>
                         </div>

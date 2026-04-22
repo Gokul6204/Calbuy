@@ -9,15 +9,17 @@ class VendorDetails(models.Model):
     that the user enters (unique).
     """
 
-    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID
-    vendor_id = models.CharField(max_length=50, unique=True, db_index=True)
+    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID (Legacy)
+    organization = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    vendor_id = models.CharField(max_length=50, db_index=True)
     vendor_name = models.CharField(max_length=255)
-    mobile_number = models.CharField(max_length=20, blank=True, null=True, unique=True)
-    email = models.EmailField(max_length=255, blank=True, null=True, unique=True)
+    mobile_number = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(max_length=255, blank=True, null=True)
     address = models.TextField(blank=True, help_text="Building number, street name, area name")
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     country = models.CharField(max_length=100, blank=True)
+    pincode = models.CharField(max_length=20, blank=True)
     full_address = models.TextField(blank=True, help_text="Combined address, city, state, country")
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
@@ -25,7 +27,7 @@ class VendorDetails(models.Model):
     category = models.CharField(max_length=100, blank=True, default="", help_text="Industry category (e.g., Fabrication, Castings)")
 
     def save(self, *args, **kwargs):
-        parts = [self.address, self.city, self.state, self.country]
+        parts = [self.address, self.city, self.state, self.pincode, self.country]
         self.full_address = ", ".join([str(p).strip() for p in parts if p and str(p).strip()])
         super().save(*args, **kwargs)
     is_active = models.BooleanField(default=True)
@@ -37,6 +39,7 @@ class VendorDetails(models.Model):
         ordering = ["vendor_id"]
         verbose_name = "Vendor"
         verbose_name_plural = "Vendors"
+        unique_together = ('vendor_id', 'organization')
 
     def __str__(self):
         return f"{self.vendor_id} - {self.vendor_name}"
@@ -44,13 +47,7 @@ class VendorDetails(models.Model):
 
 class VendorMaterialInfo(models.Model):
     """Materials linked to a vendor."""
-
-    vendor = models.ForeignKey(
-        VendorDetails,
-        to_field="vendor_id",
-        db_column="vendor_id",
-        on_delete=models.CASCADE
-    )
+    vendor = models.ForeignKey(VendorDetails, on_delete=models.CASCADE, related_name="material_info")
     part = models.CharField(max_length=255, default="General", help_text="Part identifier or name (e.g., HEA200)")
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { fetchProjects, createProject, deleteProject } from "../api/project";
+import { useAlert } from "../context/NotificationContext";
 import { FaPlus, FaFolder, FaTrash, FaArrowRight, FaProjectDiagram } from "react-icons/fa";
 import "./ProjectPage.css";
 
@@ -12,6 +13,8 @@ export function ProjectPage({ onSelectProject }) {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState(null);
   const [createdProject, setCreatedProject] = useState(null);
+  const [viewingPassword, setViewingPassword] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -55,15 +58,22 @@ export function ProjectPage({ onSelectProject }) {
     setError(null);
   };
 
-  const handleDeleteProject = async (id, e) => {
+  const { showConfirm } = useAlert();
+
+  const handleDeleteProject = (id, e) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this project?")) return;
-    try {
-      await deleteProject(id);
-      loadProjects();
-    } catch (err) {
-      console.error("Failed to delete project:", err);
-    }
+    showConfirm(
+      'Are you sure you want to delete this project? All associated BOM data will be permanently removed.',
+      async () => {
+        try {
+          await deleteProject(id);
+          loadProjects();
+        } catch (err) {
+          console.error("Failed to delete project:", err);
+        }
+      },
+      'delete'
+    );
   };
 
   return (
@@ -125,14 +135,53 @@ export function ProjectPage({ onSelectProject }) {
               </div>
               <div className="project-card-footer">
                 <span className="date">Created: {new Date(project.created_at).toLocaleDateString()}</span>
-                <span className="enter-link">
-                  Open Project <FaArrowRight />
-                </span>
+                <div className="footer-links">
+                  <a 
+                    href="#" 
+                    className="see-password-link" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setViewingPassword(project.project_password);
+                      setShowPasswordModal(true);
+                    }}
+                  >
+                    see password
+                  </a>
+                  <span className="enter-link">
+                    Open Project <FaArrowRight />
+                  </span>
+                </div>
               </div>
             </div>
           ))
         )}
       </div>
+
+      {showPasswordModal && (
+        <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="modal-content shadow-lg" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3>Project Password</h3>
+              <button className="btn-close" onClick={() => setShowPasswordModal(false)}>
+                &times;
+              </button>
+            </div>
+            <div className="modal-body text-center">
+              <div className="password-display p-4 bg-light rounded mb-4" style={{ border: '2px dashed var(--primary)', background: 'rgba(var(--primary-rgb), 0.05)' }}>
+                <p className="mb-2 text-muted uppercase small tracking-wider">Portal Access Password</p>
+                <h2 className="font-mono text-primary m-0" style={{ letterSpacing: '2px' }}>{viewingPassword}</h2>
+              </div>
+              <p className="text-muted mb-4">
+                This password is required for vendors to access the project portal.
+              </p>
+              <button className="btn btn-primary w-100" onClick={() => setShowPasswordModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAddModal && (
         <div className="modal-overlay" onClick={closeAddModal}>

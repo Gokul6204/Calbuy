@@ -66,7 +66,7 @@ class VendorPortalLoginView(APIView):
                 
             if not project:
                 return Response({
-                    "error": "Project not found. Please ensure you are using the exact portal link from your RFQ email."
+                    "error": "Project not found. Please ensure you are using the exact portal link from your RFQ email./Project Might be deleted or archived"
                 }, status=status.HTTP_404_NOT_FOUND)
             
             # Find the specific vendor for this project (Case-Insensitive)
@@ -85,19 +85,19 @@ class VendorPortalLoginView(APIView):
             access.last_login = timezone.now()
             access.save()
             
-            # Real-time Broadcast: Notify admin that vendor is now "Pending" (active login)
+            # Real-time Broadcast: Use organization name
             from Calbuy_procurement.realtime import broadcast_company_event
             broadcast_company_event(
-                company_id=project.company_id,
+                company_id=project.organization,
                 action_type="quotation_updated",
                 payload={"project_id": project.id, "vendor_id": access.vendor_id, "status": "Pending"},
                 sender_id=None # Anonymous vendor
             )
 
-            # Fetch vendor name
+            # Fetch vendor name (Isolated by organization)
             vendor_name = "Verified Vendor"
             try:
-                v_obj = VendorDetails.objects.filter(vendor_id=access.vendor_id).first()
+                v_obj = VendorDetails.objects.filter(vendor_id=access.vendor_id, organization=project.organization).first()
                 if v_obj:
                     vendor_name = v_obj.vendor_name
             except:
@@ -163,6 +163,7 @@ class RequiredItemsView(APIView):
                     'total_quantity': 0,
                     'total_length_area': 0,
                     'required_date': None,
+                    'unit': item.unit or 'nos',
                     'items': []
                 }
 
@@ -219,6 +220,7 @@ class RequiredItemsView(APIView):
             city = ""
             state = ""
             country = ""
+            pincode = ""
             
             if quote:
                 if quote.price is not None or quote.count is not None:
@@ -234,6 +236,7 @@ class RequiredItemsView(APIView):
                     city = quote.city
                     state = quote.state
                     country = quote.country
+                    pincode = quote.pincode
 
             final_list.append({
                 'part_name': data['part_name'],
@@ -242,6 +245,7 @@ class RequiredItemsView(APIView):
                 'total_quantity': data['total_quantity'],
                 'total_length_area': data['total_length_area'],
                 'required_date': data['required_date'],
+                'unit': data['unit'],
                 'items': data['items'],
                 'status': status,
                 'price': price,
@@ -254,6 +258,7 @@ class RequiredItemsView(APIView):
                 'city': city,
                 'state': state,
                 'country': country,
+                'pincode': pincode,
                 'existing_quote_id': quote_id,
                 'deadline': quote.submission_deadline if quote else None
             })
@@ -299,15 +304,16 @@ class VendorQuotationView(APIView):
         city=data.get("city")
         state=data.get("state")
         country=data.get("country")
+        pincode=data.get("pincode")
 
         lat, lon, distance = None, None, None
-        address_parts = [shipment_address, city, state, country]
+        address_parts = [shipment_address, city, state, country, pincode]
         if any(p and str(p).strip() for p in address_parts):
             from Calbuy_procurement.geocoding import get_geocode, calculate_distance_km
             from accounts.models import UserProfile
             try:
                 # 1. Geocode the vendor's shipment location (origin)
-                lat, lon = get_geocode(shipment_address or '', city or '', state or '', country or '')
+                lat, lon = get_geocode(shipment_address or '', city or '', state or '', country or '', pincode or '')
             except Exception:
                 pass 
             
@@ -325,7 +331,8 @@ class VendorQuotationView(APIView):
                                 profile.address or '', 
                                 profile.city or '', 
                                 profile.state or '', 
-                                profile.country or ''
+                                profile.country or '',
+                                profile.pincode or ''
                             )
                             # Save back to profile for future use
                             profile.latitude = dest_lat
@@ -363,6 +370,7 @@ class VendorQuotationView(APIView):
             quote.city = city
             quote.state = state
             quote.country = country
+            quote.pincode = pincode
             if lat and lon:
                 quote.latitude = lat
                 quote.longitude = lon
@@ -387,16 +395,18 @@ class VendorQuotationView(APIView):
                 city=city,
                 state=state,
                 country=country,
+                pincode=pincode,
                 latitude=lat,
                 longitude=lon,
                 distance_to_organization_km=distance,
-                company_id=project.company_id
+                company_id=project.company_id,
+                organization=project.organization
             )
         
-        # Real-time Broadcast: Notify admin that quotation was submitted
+        # Real-time Broadcast: Use organization name
         from Calbuy_procurement.realtime import broadcast_company_event
         broadcast_company_event(
-            company_id=project.company_id,
+            company_id=project.organization,
             action_type="quotation_updated",
             payload={"project_id": project.id, "vendor_id": vendor_id},
             sender_id=None

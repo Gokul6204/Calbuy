@@ -21,9 +21,9 @@ class PartMaster(models.Model):
 
 class BOM(models.Model):
     """Bill of Materials line item."""
-
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="bom_lines", null=True, blank=True)
-    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID
+    company_id = models.IntegerField(default=1, db_index=True) # Tenant ID (Legacy)
+    organization = models.CharField(max_length=255, null=True, blank=True, db_index=True)
     part_number = models.CharField(max_length=100, blank=True, help_text="Part numbers from the file")
     part = models.CharField(max_length=100, blank=True, help_text="BOM part/type (e.g. WS, C, L)")
     part_name = models.CharField(max_length=255, blank=True, null=True, help_text="Full name (e.g. WELDED STEEL)")

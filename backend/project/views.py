@@ -13,11 +13,19 @@ from Calbuy_procurement.realtime import broadcast_company_event
 
 class ProjectListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
-        if self.request.user.is_authenticated:
-            from django.db.models import Q
-            company_id = self.request.user.id
-            return Project.objects.filter(Q(company_id=company_id) | Q(company_id=1)).order_by('-id')
-        return Project.objects.filter(company_id=1).order_by('-id')
+        if not self.request.user.is_authenticated:
+            return Project.objects.none()
+        
+        org = None
+        try:
+            org = self.request.user.profile.organization_name
+        except:
+            pass
+            
+        if not org:
+            org = self.request.user.username or f"User_{self.request.user.id}"
+            
+        return Project.objects.filter(organization__iexact=org.strip()).order_by('-id')
     serializer_class = ProjectSerializer
     
     def create(self, request, *args, **kwargs):
@@ -32,26 +40,46 @@ class ProjectListCreateView(generics.ListCreateAPIView):
             alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
             project_password = ''.join(secrets.choice(alphabet) for i in range(12))
             
-            # Determine company_id from user or default
-            company_id = self.request.user.id if self.request.user.is_authenticated else 1
+            # Determine organization from user profile
+            org_name = None
+            try:
+                org_name = self.request.user.profile.organization_name
+            except:
+                pass
+                
+            if not org_name:
+                org_name = self.request.user.username or f"User_{self.request.user.id}"
             
             project = serializer.save(
                 project_password=project_password,
-                company_id=company_id
+                organization=org_name
             )
             
-            # Real-time Broadcast
+            # Real-time Broadcast: Use organization name as the group
             broadcast_company_event(
-                company_id=company_id,
+                company_id=org_name, 
                 action_type="project_updated",
                 payload=ProjectSerializer(project).data,
-                sender_id=self.request.user.id if self.request.user.is_authenticated else None
+                sender_id=self.request.user.id
             )
         except Exception as e:
             raise e
 
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Project.objects.all()
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return Project.objects.none()
+        
+        org = None
+        try:
+            org = self.request.user.profile.organization_name
+        except:
+            pass
+            
+        if not org:
+            org = self.request.user.username or f"User_{self.request.user.id}"
+            
+        return Project.objects.filter(organization__iexact=org.strip())
     serializer_class = ProjectSerializer
 
 class ProjectQuotationListView(APIView):
@@ -66,7 +94,7 @@ class ProjectQuotationListView(APIView):
         accesses = ProjectVendorAccess.objects.filter(project=project)
         access_map = {a.vendor_id: a for a in accesses}
         vendor_ids = accesses.values_list('vendor_id', flat=True).distinct()
-        vendors_map = {v.vendor_id: v.vendor_name for v in VendorDetails.objects.filter(vendor_id__in=vendor_ids)}
+        vendors_map = {v.vendor_id: v.vendor_name for v in VendorDetails.objects.filter(vendor_id__in=vendor_ids, organization=project.organization)}
         
         # Get all quotations for this project
         quotes = Quotation.objects.filter(project=project).order_by('vendor_id', 'part_name', 'size_spec')
@@ -134,7 +162,7 @@ class IssuePOView(APIView):
         
         # 3. Send email with PDF attachment
         pdf_content = request.data.get("pdf_content") # Base64 string
-        vendor_details = VendorDetails.objects.filter(vendor_id=vendor_id).first()
+        vendor_details = VendorDetails.objects.filter(vendor_id=vendor_id, organization=project.organization).first()
         
         if vendor_details and vendor_details.email:
             from django.core.mail import EmailMessage

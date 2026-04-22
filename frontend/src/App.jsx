@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { HomePage } from './components/HomePage'
+import { LandingPage } from './components/LandingPage'
 import { LoginPage } from './components/LoginPage'
 import { RegisterPage } from './components/RegisterPage'
 import { ProfilePage } from './components/ProfilePage'
@@ -176,12 +176,12 @@ function App() {
   if (authLoading) return <div className="app-loading" style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: 'white'}}>Loading application...</div>
 
   const showNavbar = isAuthenticated && !['login', 'register'].includes(view)
-  const showFooter = isAuthenticated && !['login', 'register'].includes(view)
-  const footerView = view === 'vendor' ? 'vendor' : 'home'
+  const showHeader = !['login', 'register'].includes(view)
 
   return (
     <div className="app">
-      <header className="app-header sticky top-0 z-50">
+      {showHeader && (
+        <header className="app-header sticky top-0 z-50">
         <div className="header-logo" onClick={() => setNavView('home')} style={{ cursor: 'pointer' }}>
           <img src="/assest/images/calbuy-logo.jpeg" alt="Calbuy Logo" className="logo-img" />
           <div className="header-text">
@@ -222,7 +222,8 @@ function App() {
             <ProfileMenu onProfileClick={() => setNavView('profile')} onLogout={() => setNavView('home')} />
           </div>
         )}
-      </header>
+        </header>
+      )}
 
       {selectedProject && showNavbar && (
         <div className="project-toolbar">
@@ -286,9 +287,9 @@ function App() {
       )}
 
       <main className="app-main">
-        {view === 'home' && <HomePage onGetStarted={() => setNavView(isAuthenticated ? 'projects' : 'login')} />}
-        {view === 'login' && <LoginPage onLoginSuccess={() => setNavView('projects')} onGoToRegister={() => setNavView('register')} />}
-        {view === 'register' && <RegisterPage onRegisterSuccess={() => setNavView('projects')} onGoToLogin={() => setNavView('login')} />}
+        {view === 'home' && <LandingPage onGetStarted={() => setNavView(isAuthenticated ? 'projects' : 'login')} />}
+        {view === 'login' && <LoginPage onLoginSuccess={() => setNavView('home')} onGoToRegister={() => setNavView('register')} />}
+        {view === 'register' && <RegisterPage onRegisterSuccess={() => setNavView('home')} onGoToLogin={() => setNavView('login')} />}
         {view === 'profile' && <ProfilePage />}
 
         {isAuthenticated ? (

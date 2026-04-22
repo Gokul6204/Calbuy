@@ -130,6 +130,23 @@
   color: var(--text-muted);
 }
 
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.see-password-link {
+  color: var(--text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.see-password-link:hover {
+  color: var(--accent);
+}
+
 .project-card-footer .enter-link {
   display: flex;
   align-items: center;

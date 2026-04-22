@@ -13,9 +13,9 @@
 }
 
 .ai-glow {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%) !important;
     color: white !important;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 15px rgba(129, 140, 248, 0.4);
 }
 
 /* Sidebar Styling */
@@ -68,7 +68,7 @@
 }
 
 .sidebar-item.active {
-    background: #4f46e5 !important;
+    background: #993fff !important;
     border-color: #4338ca !important;
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
@@ -82,7 +82,7 @@
 }
 
 .sidebar-item.active:hover {
-    background: #4338ca !important;
+    background: #993fff !important;
 }
 
 .sidebar-item-content {
@@ -107,7 +107,7 @@
 
 .item-qty {
     font-size: 0.8rem;
-    color: #4f46e5;
+    color: #9a41ff;
     font-weight: 700;
     margin-top: 0.2rem;
 }
@@ -337,7 +337,7 @@
 }
 
 .top-recommendation {
-    border: 1px solid #6366f1;
+    border: 1px solid #34d399;
     background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
     box-shadow: 0 15px 35px rgba(99, 102, 241, 0.12);
 }
@@ -347,7 +347,7 @@
     position: absolute;
     top: -12px;
     right: 40px;
-    background: #6366f1;
+    background: #34d399;
     color: white;
     padding: 6px 14px;
     border-radius: 50px;
@@ -372,7 +372,7 @@
 }
 
 .top-recommendation .rank-badge {
-    background: #6366f1;
+    background: #34d399;
     color: white;
 }
 
@@ -515,7 +515,7 @@
     padding: 0.8rem;
     border-radius: 10px;
     background: white;
-    color: #4f46e5;
+    color: #10b981;
     border: 2px solid #e0e7ff;
     font-weight: 700;
     display: flex;
@@ -526,9 +526,9 @@
 }
 
 .btn-select-final:hover {
-    background: #4f46e5;
+    background: #10b981;
     color: white;
-    border-color: #4f46e5;
+    border-color: #10b981;
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
 }
 
@@ -553,7 +553,7 @@
 
 .ai-glow {
     text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.5);
-    background: linear-gradient(135deg, var(--primary) 0%, #6366f1 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, #34d399 100%);
     color: white !important;
 }
 

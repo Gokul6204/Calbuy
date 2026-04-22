@@ -4,7 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_geocode(address, city, state, country):
+def get_geocode(address, city, state, country, pincode=""):
     """
     Combines address parts and calls Google Maps Geocoding API.
     Returns (latitude, longitude) or raises ValueError on failure.
@@ -13,7 +13,7 @@ def get_geocode(address, city, state, country):
     if not api_key:
         raise ValueError("Google Maps API Key is not configured in backend settings.")
 
-    full_address = f"{address}, {city}, {state}, {country}"
+    full_address = f"{address}, {city}, {state}, {pincode}, {country}"
     url = f"https://maps.googleapis.com/maps/api/geocode/json?address={full_address}&key={api_key}"
 
     try:

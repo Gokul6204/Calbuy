@@ -25,8 +25,8 @@
   --error: #ef4444;
 
   /* Sizing & Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
 
@@ -45,23 +45,24 @@
 }
 
 [data-theme="light"] {
-  --bg: #f8fafc;
-  --surface-0: #ffffff;
-  --surface-1: #f1f5f9;
-  --surface-2: #e2e8f0;
+  --bg: #F8FAFC;
+  --surface-0: #FFFFFF;
+  --surface-1: #FFFFFF;
+  --surface-2: #F1F5F9;
   --surface-soft: rgba(0, 0, 0, 0.03);
 
-  --border-light: rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.15);
+  --border-light: #E5E7EB;
+  --border-strong: #D1D5DB;
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
 
-  --accent: #4f46e5;
-  --accent-light: #6366f1;
-  --accent-dark: #4338ca;
-  --accent-glow: rgba(79, 70, 229, 0.15);
+  --accent: #4F46E5;
+  --accent-light: #7C3AED;
+  --accent-dark: #3730A3;
+  --accent-glow: rgba(79, 70, 229, 0.2);
+  --accent-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
   
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
@@ -77,7 +78,7 @@
 body {
   margin: 0;
   font-family: var(--font-main);
-  background: var(--bg);
+  background-color: var(--bg);
   color: var(--text-primary);
   height: 100vh;
   width: 100vw;
@@ -238,14 +239,15 @@ textarea {
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: var(--accent-gradient, var(--accent));
   color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
 }
 
 .btn-primary:hover {
-  background: var(--accent-light);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
 }
 
 .btn-secondary {
@@ -280,6 +282,38 @@ textarea {
 .btn-outline-danger:hover {
   background: rgba(239, 68, 68, 0.1);
   border-color: var(--error);
+}
+
+/* Custom Workflow Buttons */
+.btn-gradient-primary {
+  background: var(--accent-gradient, var(--accent));
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+.btn-gradient-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+.btn-soft-blue {
+  background: #E0E7FF;
+  color: #4F46E5;
+  border: 1px solid transparent;
+}
+.btn-soft-blue:hover {
+  background: #C7D2FE;
+  transform: translateY(-2px);
+}
+
+.btn-light-red {
+  background: #FEE2E2;
+  color: #EF4444;
+  border: 1px solid transparent;
+}
+.btn-light-red:hover {
+  background: #FECACA;
+  transform: translateY(-2px);
 }
 
 .btn:disabled {

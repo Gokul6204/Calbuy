@@ -11,7 +11,7 @@ import { useAlert } from '../context/NotificationContext'
 import { useWebSocket } from '../context/WebSocketContext'
 export function VendorPage() {
     const { subscribe, isConnected } = useWebSocket()
-    const { showAlert } = useAlert()
+    const { showAlert, showConfirm } = useAlert()
     const [vendors, setVendors] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -61,26 +61,34 @@ export function VendorPage() {
         }
     }, [subscribe])
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this vendor?')) return
-        try {
-            await deleteVendor(id)
-            loadVendors()
-        } catch (e) {
-            showAlert(e.message, 'error')
-        }
+    const handleDelete = (id) => {
+        showConfirm(
+            'Are you sure you want to delete this vendor? This action cannot be undone.',
+            async () => {
+                try {
+                    await deleteVendor(id)
+                    loadVendors()
+                } catch (e) {
+                    showAlert(e.message, 'error')
+                }
+            },
+            'delete'
+        )
     }
 
-    const handleToggleStatus = async (vendor) => {
+    const handleToggleStatus = (vendor) => {
         const action = vendor.is_active ? 'deactivate' : 'activate'
-        if (!window.confirm(`Are you sure you want to ${action} this vendor?`)) return
-        
-        try {
-            await updateVendor(vendor.id, { ...vendor, is_active: !vendor.is_active })
-            loadVendors()
-        } catch (e) {
-            showAlert(e.message || 'Failed to update status', 'error')
-        }
+        showConfirm(
+            `Are you sure you want to ${action} this vendor?`,
+            async () => {
+                try {
+                    await updateVendor(vendor.id, { ...vendor, is_active: !vendor.is_active })
+                    loadVendors()
+                } catch (e) {
+                    showAlert(e.message || 'Failed to update status', 'error')
+                }
+            }
+        )
     }
 
     return (

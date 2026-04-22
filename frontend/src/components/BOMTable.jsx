@@ -1,10 +1,16 @@
 import { FaEdit, FaTrash, FaInbox } from 'react-icons/fa'
+import { useAlert } from '../context/NotificationContext'
 import './BOMTable.css'
 
 export function BOMTable({ data, onEdit, onDelete }) {
+  const { showConfirm } = useAlert()
+
   const handleDelete = (row) => {
-    if (!window.confirm(`Delete "${row.grade_name || row.material}"?`)) return
-    onDelete?.(row)
+    showConfirm(
+      `Are you sure you want to delete "${row.grade_name || row.material || 'this item'}"?`,
+      () => onDelete?.(row),
+      'delete'
+    )
   }
 
   if (!data || data.length === 0) {
@@ -35,11 +41,15 @@ export function BOMTable({ data, onEdit, onDelete }) {
         <tbody>
           {data.map((row) => (
             <tr key={row.id || row.temp_id}>
-              <td>{row.formatted_part || row.part || row.part_number || '—'}</td>
+              <td className="part-name">{row.formatted_part || row.part || row.part_number || '—'}</td>
               <td>{row.size || '—'}</td>
-              <td className="font-semibold">{row.grade_name || row.material || '—'}</td>
+              <td className="font-semibold text-gray-700">{row.grade_name || row.material || '—'}</td>
               <td className="bom-table-qty">{formatQty(row.quantity ?? row.length_area)}</td>
-              <td style={{ textTransform: 'capitalize' }}>{row.quantity_type || '—'}</td>
+              <td>
+                <span className={`badge-unit ${row.quantity_type ? row.quantity_type.toLowerCase() : 'default'}`}>
+                  {row.quantity_type || '—'}
+                </span>
+              </td>
               <td>{row.unit || '—'}</td>
               <td>{formatDate(row.date_of_requirement)}</td>
               <td>

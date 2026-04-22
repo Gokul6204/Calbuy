@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { 
     FaProjectDiagram, FaEnvelope, FaLock, FaCheckCircle, 
     FaExclamationCircle, FaUserShield, FaClock, FaCheckSquare,
-    FaArrowLeft, FaSignOutAlt, FaLayerGroup, FaDolly, FaCalendarAlt 
+    FaArrowLeft, FaSignOutAlt, FaLayerGroup, FaDolly, FaCalendarAlt,
+    FaEye, FaEyeSlash
 } from 'react-icons/fa'
 import { MdDateRange, MdProductionQuantityLimits } from "react-icons/md";
 import { portalLogin, fetchVendorQuotations, submitQuotation, fetchPortalItems } from '../api/vendor'
@@ -13,6 +14,7 @@ export function VendorPortal({ initialProjectId }) {
     const { showAlert } = useAlert()
     const [view, setView] = useState('login') // 'login', 'dashboard', 'submission-form'
     const [credentials, setCredentials] = useState({ project_id: initialProjectId || '', email: '', password: '' })
+    const [showPassword, setShowPassword] = useState(false)
     const [auth, setAuth] = useState(null)
     const [rfqs, setRfqs] = useState([])
     const [selectedRfq, setSelectedRfq] = useState(null)
@@ -22,6 +24,7 @@ export function VendorPortal({ initialProjectId }) {
         city: '',
         state: '',
         country: '',
+        pincode: '',
         lead_time: '',
         currency: 'USD',
         negotiation_percentage: 0,
@@ -106,6 +109,7 @@ export function VendorPortal({ initialProjectId }) {
                 city: submission.city,
                 state: submission.state,
                 country: submission.country,
+                pincode: submission.pincode,
                 lead_time: submission.lead_time,
                 price: submission.price,
                 notes: submission.notes,
@@ -153,63 +157,117 @@ export function VendorPortal({ initialProjectId }) {
     }
 
     const getDisplayUnit = (partName, existingUnit) => {
-        if (existingUnit && existingUnit !== 'nos') return existingUnit;
+        if (existingUnit && existingUnit.toLowerCase() !== 'nos') return existingUnit;
         const name = (partName || '').toUpperCase();
-        if (name.includes('PLATE') || name.includes('(PL)')) return 'sq.in';
-        if (name.includes('ANGLE') || name.includes('(L)') || name.includes('CHAN') || name.includes('BEAM')) return 'ft';
+        if (name.includes('PLATE') || (name.includes('PL') && name.split(/\s+/).some(word => word === 'PL' || word.startsWith('PL')))) return 'sq.in';
+        if (name.includes('ANGLE') || name.includes('CHAN') || name.includes('BEAM')) return 'ft';
         return existingUnit || 'nos';
     };
 
     if (view === 'login') {
         return (
             <div className="portal-login-screen">
-                <div className="portal-brand">
-                    <img src="/assest/images/calbuy-logo.jpeg" alt="Calbuy" className="portal-logo-img" />
-                    <div className="portal-brand-text">
-                        <h2>Vendor Hub</h2>
-                        <p>Powered by Calbuy</p>
+                {/* ── RIGHT Side Form ── */}
+                <section className="portal-auth-form-side">
+                    <div className="portal-auth-logo">
+                        <div className="portal-brand-circle">
+                             <img src="/assest/images/calbuy-logo.jpeg" alt="Calbuy" className="portal-brand-img" />
+                        </div>
+                        <div className="portal-brand-text">
+                            <span className="portal-brand-name">CalBuy</span>
+                            <span className="portal-brand-tag">VENDOR HUB</span>
+                        </div>
                     </div>
-                </div>
 
-                <div className="login-card shadow-2xl">
-                    <header className="login-header">
-                        <h3>Vendor Quotation Login</h3>
-                        <p>Access your project requirements and submit bids.</p>
-                    </header>
+                    <div className="portal-auth-form-container">
+                        <header className="portal-auth-header">
+                            <h2 className="portal-auth-title">Vendor Access</h2>
+                            <p className="portal-auth-subtitle">Welcome to the procurement portal. Enter your RFQ credentials.</p>
+                        </header>
 
-                    <form onSubmit={handleLogin} className="login-form">
-                        <div className="form-Grade">
-                            <label><FaEnvelope /> Email Address</label>
-                            <input
-                                type="email"
-                                placeholder="name@company.com"
-                                value={credentials.email}
-                                onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                                required
-                            />
+                        {error && <div className="portal-error-banner">{error}</div>}
+
+                        <form onSubmit={handleLogin} className="login-form">
+                            <div className="cb-form-group">
+                                <label className="cb-form-label">Email address</label>
+                                <input
+                                    type="email"
+                                    className="cb-input-field"
+                                    placeholder="Enter your email"
+                                    value={credentials.email}
+                                    onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <div className="cb-form-group">
+                                <label className="cb-form-label">Access Password</label>
+                                <div className="cb-password-wrapper">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        className="cb-input-field"
+                                        placeholder="••••••••"
+                                        value={credentials.password}
+                                        onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                                        required
+                                    />
+                                    <button 
+                                        type="button"
+                                        className="cb-password-toggle"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        tabIndex="-1"
+                                    >
+                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button type="submit" className="portal-btn-primary" disabled={submitting}>
+                                {submitting ? 'Authenticating...' : 'Sign In to Portal'}
+                            </button>
+                        </form>
+
+                        <div className="login-footer" style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
+                            <p>Issues with login? <a href="mailto:procurement@calbuy.com" style={{ color: '#7c3aed', fontWeight: 600 }}>Contact procurement</a></p>
                         </div>
-                        <div className="form-Grade">
-                            <label><FaLock /> Access Password</label>
-                            <input
-                                type="password"
-                                placeholder="••••••••••••"
-                                value={credentials.password}
-                                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                                required
-                            />
+                    </div>
+                </section>
+
+                {/* ── LEFT Side Flow ── */}
+                <aside className="portal-auth-flow-side">
+                    <div className="portal-flow-grid" />
+                    <div className="portal-pipeline-main-line">
+                        <div className="portal-traveling-glow" />
+                    </div>
+
+                    <div className="portal-flow-nodes-container">
+                        <div className="portal-pipeline-node p-node-1">
+                            <span className="portal-node-step">Phase 01</span>
+                            <div className="portal-node-name">Review RFQ</div>
                         </div>
 
-                        {error && <div className="error-box"><FaExclamationCircle /> {error}</div>}
-
-                        <button type="submit" className="btn btn-primary portal-btn" disabled={submitting}>
-                            {submitting ? <span className="spinner-border spinner-border-sm me-2"></span> : "Sign In to Portal"}
-                        </button>
-
-                        <div className="login-footer">
-                            <p>Issues with login? <a href="mailto:procurement@calbuy.com">Contact Procurement Team</a></p>
+                        <div className="portal-pipeline-node p-node-2">
+                            <span className="portal-node-step">Phase 02</span>
+                            <div className="portal-node-name">Submit Quotation</div>
                         </div>
-                    </form>
-                </div>
+
+                        <div className="portal-pipeline-node p-node-3">
+                            <span className="portal-node-step">Phase 03</span>
+                            <div className="portal-node-name">AI Negotiation</div>
+                        </div>
+
+                        <div className="portal-pipeline-node p-node-4">
+                            <span className="portal-node-step">Phase 04</span>
+                            <div className="portal-node-name">PO Issuance</div>
+                        </div>
+
+                        <div className="portal-pipeline-node portal-objective-node">
+                            <div className="portal-objective-icon">✓</div>
+                            <span className="portal-node-step">Success</span>
+                            <div className="portal-node-name">Vendor Confirmed</div>
+                        </div>
+                    </div>
+                </aside>
             </div>
         )
     }
@@ -236,6 +294,7 @@ export function VendorPortal({ initialProjectId }) {
                 city: rfq.city || '',
                 state: rfq.state || '',
                 country: rfq.country || '',
+                pincode: rfq.pincode || '',
                 lead_time: rfq.lead_time || '',
                 price: rfq.price || '',
                 negotiation_percentage: rfq.negotiation_percentage || 0,
@@ -499,15 +558,27 @@ export function VendorPortal({ initialProjectId }) {
                                                     />
                                                 </div>
                                             </div>
-                                            <div className="form-group-custom">
-                                                <label>Country</label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Country"
-                                                    value={submission.country}
-                                                    onChange={(e) => setSubmission({ ...submission, country: e.target.value })}
-                                                    required
-                                                />
+                                            <div className="form-grid-inner">
+                                                <div className="form-group-custom">
+                                                    <label>Country</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Country"
+                                                        value={submission.country}
+                                                        onChange={(e) => setSubmission({ ...submission, country: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="form-group-custom">
+                                                    <label>Pincode</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Pincode"
+                                                        value={submission.pincode}
+                                                        onChange={(e) => setSubmission({ ...submission, pincode: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
 

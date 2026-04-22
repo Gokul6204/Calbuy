@@ -69,6 +69,9 @@ class SendRfqEmailView(APIView):
                                         s_spec = item.get("size")
                                         m_name = item.get("grade_name") or item.get("material")
                                         
+                                        # Determine organization from project
+                                        org_name = project.organization if project else None
+                                        
                                         # Use exactly matched combination
                                         Quotation.objects.update_or_create(
                                             project=project,
@@ -76,6 +79,7 @@ class SendRfqEmailView(APIView):
                                             part_name=p_name,
                                             size_spec=s_spec,
                                             material_name=m_name,
+                                            organization=org_name,
                                             bom_item_id=item.get("id"),
                                             defaults={
                                                 'submission_deadline': rfq.get("deadline")
@@ -90,6 +94,7 @@ class SendRfqEmailView(APIView):
                                             project=project,
                                             vendor_id=v_id,
                                             material_name__iexact=material,
+                                            organization=project.organization if project else None,
                                             defaults={
                                                 'submission_deadline': deadline_val,
                                                 'part_name': material # Fallback part name
@@ -117,13 +122,19 @@ class VendorListCreateView(APIView):
     """List vendors (GET) or create a vendor (POST)."""
 
     def get(self, request):
-        if request.user.is_authenticated:
-            from django.db.models import Q
-            # Show vendors belonging to this user's company OR the default company (1)
-            company_id = request.user.id
-            qs = VendorDetails.objects.filter(Q(company_id=company_id) | Q(company_id=1))
-        else:
-            qs = VendorDetails.objects.filter(company_id=1)
+        if not request.user.is_authenticated:
+            return Response([])
+            
+        org = None
+        try:
+            org = request.user.profile.organization_name
+        except:
+            pass
+            
+        if not org:
+            org = request.user.username or f"User_{request.user.id}"
+            
+        qs = VendorDetails.objects.filter(organization__iexact=org.strip())
 
         vendor_id = request.query_params.get("vendor_id")
         if vendor_id:
@@ -138,7 +149,16 @@ class VendorListCreateView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try:
-            # Determine company_id from user or default
+            # Determine organization from user profile
+            org_name = None
+            try:
+                org_name = request.user.profile.organization_name
+            except:
+                pass
+            
+            if not org_name:
+                org_name = request.user.username or f"User_{request.user.id}"
+            
             company_id = request.user.id if request.user.is_authenticated else 1
             
             # Geocoding and distance calculation
@@ -170,18 +190,18 @@ class VendorListCreateView(APIView):
                     pass
                     
             vendor = serializer.save(
-                company_id=company_id,
+                organization=org_name,
                 latitude=lat,
                 longitude=lon,
                 distance_to_organization_km=distance
             )
             
-            # Real-time Broadcast
+            # Real-time Broadcast: Use organization name
             broadcast_company_event(
-                company_id=company_id,
+                company_id=org_name,
                 action_type="vendor_updated",
                 payload=VendorDetailsSerializer(vendor).data,
-                sender_id=request.user.id if request.user.is_authenticated else None
+                sender_id=request.user.id
             )
         except IntegrityError as e:
             return Response(
@@ -210,12 +230,12 @@ class VendorDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         try:
             vendor = serializer.save()
-            # Real-time Broadcast
+            # Real-time Broadcast: Use organization name
             broadcast_company_event(
-                company_id=vendor.company_id,
+                company_id=vendor.organization,
                 action_type="vendor_updated",
                 payload=VendorDetailsSerializer(vendor).data,
-                sender_id=request.user.id if request.user.is_authenticated else None
+                sender_id=request.user.id
             )
         except IntegrityError:
             return Response(
@@ -302,7 +322,13 @@ class MatchVendorsView(APIView):
         for cat in categories:
             query |= Q(category__iexact=cat.strip())
         
-        vendors_qs = VendorDetails.objects.filter(query, is_active=True)
+        # Filter by organization
+        try:
+            org = request.user.profile.organization_name
+            vendors_qs = VendorDetails.objects.filter(query, organization=org, is_active=True)
+        except:
+            company_id = request.user.id if request.user.is_authenticated else 1
+            vendors_qs = VendorDetails.objects.filter(query, company_id=company_id, is_active=True)
         
         if location:
             vendors_qs = vendors_qs.filter(Q(city__icontains=location.strip()) | Q(state__icontains=location.strip()) | Q(country__icontains=location.strip()))
@@ -314,7 +340,7 @@ class MatchVendorsView(APIView):
         from .models import VendorMaterialInfo
         
         # Get all parts for these vendors at once for efficiency
-        v_ids = [v["vendor_id"] for v in vendors_data]
+        v_ids = [v["id"] for v in vendors_data]
         all_v_parts = VendorMaterialInfo.objects.filter(vendor_id__in=v_ids)
         
         # Create a mapping of vendor_id -> list of parts
@@ -329,7 +355,7 @@ class MatchVendorsView(APIView):
         request_parts_lower = [p.strip().lower() for p in request_parts]
 
         for v in vendors_data:
-            v_id = v.get("vendor_id")
+            v_id = v.get("id")
             
             # Matched Category - based on organization's category matching the request
             v_cat = (v.get("category") or "").strip().lower()
@@ -372,27 +398,34 @@ class VendorUploadView(APIView):
             
         created = []
         skipped = []
-        
         company_id = request.user.id if request.user.is_authenticated else 1
         
+        # Determine organization from user profile
+        org_name = None
+        try:
+            org_name = request.user.profile.organization_name
+        except:
+            pass
+
         for row in rows:
             vendor_id = row.get("vendor_id")
-            if not vendor_id: continue
+            if not vendor_id: 
+                continue
             
             try:
-                # Use update_or_create to handle potential existing entries? 
-                # Or just skip/error. Let's try update_or_create to be helpful.
+                # Use update_or_create to handle potential existing entries
                 obj, is_new = VendorDetails.objects.update_or_create(
-                vendor_id=vendor_id,
-                defaults={
-                    "company_id": company_id,
-                    "vendor_name": row.get("vendor_name", "unknown"),
-                    "mobile_number": row.get("mobile_number", "unknown"),
-                    "email": row.get("email", "unknown"),
-                    "city": row.get("city", row.get("location", "unknown")), # Mapping location to city if city not present
-                    "address": row.get("address", "unknown"),
-                }
-            )
+                    vendor_id=vendor_id,
+                    organization=org_name,
+                    defaults={
+                        "company_id": company_id,
+                        "vendor_name": row.get("vendor_name", "unknown"),
+                        "mobile_number": row.get("mobile_number", "unknown"),
+                        "email": row.get("email", "unknown"),
+                        "city": row.get("city", row.get("location", "unknown")),
+                        "address": row.get("address", "unknown"),
+                    }
+                )
                 created.append(VendorDetailsSerializer(obj).data)
             except Exception as e:
                 skipped.append({"vendor_id": vendor_id, "error": str(e)})

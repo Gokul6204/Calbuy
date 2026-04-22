@@ -57,16 +57,52 @@
   --text-primary: #111827;
   --text-secondary: #6B7280;
   --text-muted: #9CA3AF;
+  --text-heading: #1F2937;
+  --text-body: #4B5563;
+  --text-inverse: #FFFFFF;
 
   --accent: #4F46E5;
   --accent-light: #7C3AED;
   --accent-dark: #3730A3;
   --accent-glow: rgba(79, 70, 229, 0.2);
   --accent-gradient: linear-gradient(135deg, #4F46E5, #7C3AED);
-  
+  --accent-soft: #E0E7FF;
+  --accent-soft-hover: #C7D2FE;
+
+  --success: #10B981;
+  --success-soft: #D1FAE5;
+  --success-dark: #059669;
+  --warning: #F59E0B;
+  --warning-soft: #FEF3C7;
+  --warning-dark: #D97706;
+  --error: #EF4444;
+  --error-soft: #FEE2E2;
+  --error-soft-hover: #FECACA;
+  --error-dark: #DC2626;
+  --info: #3B82F6;
+  --info-soft: #DBEAFE;
+
+  /* Badge / Tag palette */
+  --badge-indigo-bg: #E0E7FF;
+  --badge-indigo-text: #4F46E5;
+  --badge-purple-bg: #F3E8FF;
+  --badge-purple-text: #7C3AED;
+  --badge-emerald-bg: #D1FAE5;
+  --badge-emerald-text: #10B981;
+  --badge-amber-bg: #FEF3C7;
+  --badge-amber-text: #D97706;
+  --badge-pink-bg: #FCE7F3;
+  --badge-pink-text: #DB2777;
+  --badge-slate-bg: #F1F5F9;
+  --badge-slate-text: #64748B;
+
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-accent: 0 4px 12px rgba(79, 70, 229, 0.25);
+  --shadow-accent-hover: 0 6px 16px rgba(79, 70, 229, 0.35);
+  --shadow-error: 0 4px 12px rgba(239, 68, 68, 0.25);
+  --shadow-error-hover: 0 6px 16px rgba(239, 68, 68, 0.4);
 }
 
 * {

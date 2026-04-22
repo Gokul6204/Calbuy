@@ -77,11 +77,11 @@
   letter-spacing: 0.05em;
 }
 
-.badge-unit.count { background: #E0E7FF; color: #4F46E5; }
-.badge-unit.area { background: #D1FAE5; color: #10B981; }
-.badge-unit.length { background: #FEF3C7; color: #D97706; }
-.badge-unit.weight { background: #FCE7F3; color: #DB2777; }
-.badge-unit.default { background: #F1F5F9; color: #64748B; }
+.badge-unit.count { background: var(--badge-indigo-bg); color: var(--badge-indigo-text); }
+.badge-unit.area { background: var(--badge-emerald-bg); color: var(--badge-emerald-text); }
+.badge-unit.length { background: var(--badge-amber-bg); color: var(--badge-amber-text); }
+.badge-unit.weight { background: var(--badge-pink-bg); color: var(--badge-pink-text); }
+.badge-unit.default { background: var(--badge-slate-bg); color: var(--badge-slate-text); }
 
 .bom-table-source {
   max-width: 200px;
@@ -126,8 +126,8 @@
 
 .bom-table-btn-delete:hover:not(:disabled) {
   color: var(--error);
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.2);
+  background: var(--error-soft);
+  border-color: var(--error);
 }
 
 .bom-table-empty {

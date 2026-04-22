@@ -130,14 +130,14 @@
     font-size: 1.25rem;
 }
 
-.stat-icon.bg-indigo-100 { background: #E0E7FF; }
-.stat-icon.text-indigo-600 { color: #4F46E5; }
-.stat-icon.bg-purple-100 { background: #F3E8FF; }
-.stat-icon.text-purple-600 { color: #7C3AED; }
-.stat-icon.bg-emerald-100 { background: #D1FAE5; }
-.stat-icon.text-emerald-600 { color: #10B981; }
-.stat-icon.bg-amber-100 { background: #FEF3C7; }
-.stat-icon.text-amber-600 { color: #D97706; }
+.stat-icon.bg-indigo-100 { background: var(--badge-indigo-bg); }
+.stat-icon.text-indigo-600 { color: var(--badge-indigo-text); }
+.stat-icon.bg-purple-100 { background: var(--badge-purple-bg); }
+.stat-icon.text-purple-600 { color: var(--badge-purple-text); }
+.stat-icon.bg-emerald-100 { background: var(--badge-emerald-bg); }
+.stat-icon.text-emerald-600 { color: var(--badge-emerald-text); }
+.stat-icon.bg-amber-100 { background: var(--badge-amber-bg); }
+.stat-icon.text-amber-600 { color: var(--badge-amber-text); }
 
 .stat-info {
     display: flex;

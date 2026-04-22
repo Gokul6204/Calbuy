@@ -484,6 +484,8 @@
 .mat-option.checked {
     background: var(--accent-glow);
     color: var(--accent-light);
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-soft);
 }
 
 .mat-option input[type="checkbox"] {
@@ -525,4 +527,4 @@
 
 .mat-clear-btn:hover {
     background: rgba(239, 68, 68, 0.08);
-}
+}

@@ -14,17 +14,17 @@
 }
 
 .notification-modal {
-    background: white;
+    background: var(--surface-0);
     padding: 1.5rem 2rem;
-    border-radius: 16px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
     min-width: 350px;
     max-width: 500px;
     position: relative;
-    border-left: 6px solid #CBD5E1;
+    border-left: 6px solid var(--border-strong);
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -42,32 +42,32 @@
 }
 
 .btn-ok {
-    background: #0f172a;
-    color: white;
+    background: var(--text-primary);
+    color: var(--text-inverse);
     border: none;
     padding: 0.625rem 2rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: var(--transition);
     font-size: 0.9rem;
 }
 
 .btn-ok:hover {
-    background: #334155;
+    opacity: 0.85;
     transform: translateY(-1px);
 }
 
 .notification-modal.success {
-    border-left-color: #10B981;
+    border-left-color: var(--success);
 }
 
 .notification-modal.error {
-    border-left-color: #EF4444;
+    border-left-color: var(--error);
 }
 
 .notification-modal.info {
-    border-left-color: #3B82F6;
+    border-left-color: var(--info);
 }
 
 .notification-icon {
@@ -75,9 +75,9 @@
     flex-shrink: 0;
 }
 
-.success .notification-icon { color: #10B981; }
-.error .notification-icon { color: #EF4444; }
-.info .notification-icon { color: #3B82F6; }
+.success .notification-icon { color: var(--success); }
+.error .notification-icon { color: var(--error); }
+.info .notification-icon { color: var(--info); }
 
 .notification-content {
     flex-grow: 1;
@@ -85,7 +85,7 @@
 
 .notification-content p {
     margin: 0;
-    color: #1E293B;
+    color: var(--text-primary);
     font-weight: 500;
     font-size: 1.05rem;
     line-height: 1.5;
@@ -94,19 +94,19 @@
 .notification-close {
     background: none;
     border: none;
-    color: #94A3B8;
+    color: var(--text-muted);
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: var(--transition);
 }
 
 .notification-close:hover {
-    background: #F1F5F9;
-    color: #475569;
+    background: var(--surface-2);
+    color: var(--text-secondary);
 }
 
 @keyframes fadeIn {
@@ -127,72 +127,72 @@
 
 /* ── Delete Confirmation Variant ── */
 .notification-modal.delete-type {
-    border-left-color: #EF4444;
+    border-left-color: var(--error);
 }
 
 .delete-type .notification-icon {
-    color: #EF4444;
+    color: var(--error);
 }
 
 .confirm-title {
     display: block;
     font-size: 1.1rem;
     font-weight: 700;
-    color: #111827;
+    color: var(--text-primary);
     margin-bottom: 0.25rem;
 }
 
 /* ── Confirm Footer Buttons ── */
 .btn-cancel {
-    background: #F1F5F9;
-    color: #475569;
-    border: 1px solid #E2E8F0;
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
     padding: 0.625rem 1.5rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition);
     font-size: 0.9rem;
 }
 
 .btn-cancel:hover {
-    background: #E2E8F0;
+    background: var(--border-light);
     transform: translateY(-1px);
 }
 
 .btn-confirm {
     border: none;
     padding: 0.625rem 1.5rem;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: var(--transition);
     font-size: 0.9rem;
-    color: #fff;
+    color: var(--text-inverse);
 }
 
 .btn-confirm-primary {
-    background: linear-gradient(135deg, #4F46E5, #7C3AED);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    background: var(--accent-gradient, var(--accent));
+    box-shadow: var(--shadow-accent);
 }
 
 .btn-confirm-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+    box-shadow: var(--shadow-accent-hover);
 }
 
 .btn-confirm-danger {
-    background: linear-gradient(135deg, #EF4444, #DC2626);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    background: linear-gradient(135deg, var(--error), var(--error-dark));
+    box-shadow: var(--shadow-error);
 }
 
 .btn-confirm-danger:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    box-shadow: var(--shadow-error-hover);
 }
 
 .confirm-type .notification-content p {
-    color: #4B5563;
+    color: var(--text-body, var(--text-secondary));
     font-weight: 400;
     font-size: 0.95rem;
 }
